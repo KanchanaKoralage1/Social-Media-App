@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import ImageIcon from "../../assets/twitter.png";
 import { NavigationMenu } from "./NavigationMenu";
 import { useNavigate } from "react-router-dom";
@@ -7,23 +7,40 @@ import ProfileImage from "../../assets/profile.png";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import { logout } from "../../services/authService";
 
 function Navigation() {
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const [userData, setUserData] = useState({
+    username: '',
+    email: ''
+  });
   const open = Boolean(anchorEl);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user) {
+      setUserData({
+        username: user.username || 'User',
+        email: user.email || 'user@example.com'
+      });
+    }
+  }, []);
+
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
+
   const handleClose = () => {
     setAnchorEl(null);
   };
 
   const handleLogout = () => {
-    console.log("logout");
+    logout(); // This will clear localStorage
+    navigate('/login');
     handleClose();
   };
-
-  const navigate = useNavigate();
 
   return (
     <>
@@ -42,10 +59,11 @@ function Navigation() {
         <div className="space-y-6">
           {NavigationMenu.map((item) => (
             <div
-              className="cursor-pointer flex space-x-3 items-center "
+              key={item.title}
+              className="cursor-pointer flex space-x-3 items-center hover:bg-gray-100 rounded-full px-4 py-2"
               onClick={() =>
                 item.title === "Profile"
-                  ? navigate(`/profile/${5}`)
+                  ? navigate(`/profile/${userData.username}`)
                   : navigate(item.path)
               }
             >
@@ -63,19 +81,25 @@ function Navigation() {
               py: "15px",
               backgroundColor: "#000000",
               color: "white",
+              "&:hover": {
+                backgroundColor: "#333333"
+              }
             }}
           >
             Tweet
           </Button>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between p-3 hover:bg-gray-100 rounded-full cursor-pointer">
           <div className="flex items-center space-x-3">
-            <Avatar alt="username" src={ProfileImage} width={30} height={30} />
-            <div>
-              <span>Kanchana Koralage</span>
-              <br />
-              <span className="opacity-70">kanchana@gmail.com</span>
+            <Avatar 
+              alt={userData.username} 
+              src={ProfileImage} 
+              sx={{ width: 40, height: 40 }}
+            />
+            <div className="flex flex-col">
+              <span className="font-bold text-sm">{userData.username}</span>
+              <span className="text-gray-500 text-sm">{userData.email}</span>
             </div>
 
             <Button
@@ -84,6 +108,7 @@ function Navigation() {
               aria-haspopup="true"
               aria-expanded={open ? "true" : undefined}
               onClick={handleClick}
+              sx={{ minWidth: 'auto' }}
             >
               <MoreHorizIcon />
             </Button>
@@ -93,7 +118,15 @@ function Navigation() {
               open={open}
               onClose={handleClose}
               MenuListProps={{
-                "aria-labelledby": "basic-button",
+                "aria-labelledby": "basic-button"
+              }}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
               }}
             >
               <MenuItem onClick={handleLogout}>Logout</MenuItem>
