@@ -2,8 +2,8 @@ spring.application.name=backend
 
 # Database Configuration
 spring.datasource.url=jdbc:mysql://localhost:3306/socialmedia?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
-spring.datasource.username=root
-spring.datasource.password=kayapaKO#123
+spring.datasource.username=YOUR_DB_USERNAME
+spring.datasource.password=YOUR_DB_PASSWORD
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 
 # JPA/Hibernate Properties
@@ -12,13 +12,12 @@ spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
 
- 
-# CORS Configuration
-spring.mvc.cors.allowed-origins=http://localhost:5173
-spring.mvc.cors.allowed-methods=GET,POST,PUT,DELETE,OPTIONS
-spring.mvc.cors.allowed-headers=*
-spring.mvc.cors.allow-credentials=true
+# Google OAuth2 Configuration
+spring.security.oauth2.client.registration.google.client-id=YOUR_GOOGLE_CLIENT_ID
+spring.security.oauth2.client.registration.google.client-secret=YOUR_GOOGLE_CLIENT_SECRET
+spring.security.oauth2.client.registration.google.scope=email,profile
+spring.security.oauth2.client.registration.google.redirect-uri=http://localhost:8080/api/auth/oauth2/callback/google
 
 # JWT Configuration
-jwt.secret=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+jwt.secret=YOUR_JWT_SECRET
 jwt.expiration=86400

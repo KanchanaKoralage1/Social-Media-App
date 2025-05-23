@@ -47,6 +47,41 @@ export const login = async (credentials) => {
   }
 };
 
+export const loginWithGoogle = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/oauth2/google`);
+    const popup = window.open(
+      response.data,
+      'Google Login',
+      'width=500,height=600,left=200,top=100'
+    );
+
+    return new Promise((resolve, reject) => {
+      const messageHandler = (event) => {
+        if (event.origin === window.location.origin && event.data.type === 'oauth-success') {
+          window.removeEventListener('message', messageHandler);
+          window.location.href = '/home'; // Navigate to home page
+          resolve({ success: true });
+        }
+      };
+
+      window.addEventListener('message', messageHandler);
+
+      // Handle popup closed
+      const checkClosed = setInterval(() => {
+        if (!popup || popup.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', messageHandler);
+          reject(new Error('Login cancelled'));
+        }
+      }, 1000);
+    });
+  } catch (error) {
+    console.error('Google login error:', error);
+    throw error;
+  }
+};
+
 export const logout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
