@@ -51,7 +51,7 @@ export default function ProfileModal({ open, handleClose, profile, onUpdateSucce
         handleClose();
       }
     } catch (error) {
-      console.error("Profile update failed:", error);
+      console.error("Profile update failed to changes:", error);
     }
     finally {
       setUploading(false);
