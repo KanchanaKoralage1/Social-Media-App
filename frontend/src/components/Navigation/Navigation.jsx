@@ -8,24 +8,46 @@ import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { logout } from "../../services/authService";
+import { getProfile } from "../../services/profileService";
 
 function Navigation() {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [userData, setUserData] = useState({
     username: '',
-    email: ''
+    email: '',
+    profileImage: null
   });
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user) {
-      setUserData({
-        username: user.username || 'User',
-        email: user.email || 'user@example.com'
-      });
-    }
+ useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // Get user from localStorage
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (user) {
+          setUserData(prev => ({
+            ...prev,
+            username: user.username || 'User',
+            email: user.email || 'user@example.com'
+          }));
+        }
+
+        // Fetch profile data including profileImage
+        const profile = await getProfile();
+        console.log('Fetched profile for navigation:', profile); // Debug log
+        if (profile && profile.profileImage) {
+          setUserData(prev => ({
+            ...prev,
+            profileImage: profile.profileImage
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile for navigation:', error);
+      }
+    };
+
+    fetchUserData();
   }, []);
 
   const handleClick = (event) => {
@@ -73,8 +95,8 @@ function Navigation() {
           ))}
         </div>
 
-        <div className="py-10">
-          <Button
+        <div className="py-5">
+          {/* <Button
             sx={{
               width: "100%",
               borderRadius: "29px",
@@ -87,15 +109,16 @@ function Navigation() {
             }}
           >
             Tweet
-          </Button>
+          </Button> */}
         </div>
 
         <div className="flex items-center justify-between p-3 hover:bg-gray-100 rounded-full cursor-pointer">
           <div className="flex items-center space-x-3">
-            <Avatar 
+           <Avatar 
               alt={userData.username} 
-              src={ProfileImage} 
+              src={userData.profileImage || ProfileImage} 
               sx={{ width: 40, height: 40 }}
+              onError={(e) => console.error('Navigation profile image failed to load:', userData.profileImage)}
             />
             <div className="flex flex-col">
               <span className="font-bold text-sm">{userData.username}</span>
