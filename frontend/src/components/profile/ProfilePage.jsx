@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace';
 import { useNavigate } from "react-router-dom";
-import ProfileImage from "../../assets/profile.png";
 import { Avatar, Button } from "@mui/material";
 import Verified from "../../assets/verified.png";
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
@@ -14,133 +13,175 @@ import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import TweetCard from '../middle section/TweetCard';
 import ProfileModal from './ProfileModal';
-
+import { getProfile, BASE_URL } from '../../services/profileService';
 
 function ProfilePage() {
+    const navigate = useNavigate();
+    const [tabValue, setTabValue] = useState("1");
+    const [openProfileModal, setOpenProfileModal] = useState(false);
+    const [profile, setProfile] = useState({
+        fullName: 'Kanchana Koralage',
+        username: 'kanchana',
+        bio: 'Lorem ipsum dolor sit amet consectetur adipisicing elit.',
+        location: 'SriLanka',
+        website: 'Education',
+        profileImage: null,
+        backgroundImage: null
+    });
 
-    const navigate=useNavigate();
-    const[tabValue, setTabValue]=useState("1");
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const data = await getProfile();
+                console.log('Fetched profile data:', data);
+                if (data) {
+                    setProfile(data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch profile:', error);
+            }
+        };
+        fetchProfile();
+    }, []);
 
-    const[openProfileModal,setOpenProfileModal]=useState(false);
+    const handleProfileUpdate = async (updatedProfile) => {
+        console.log('Updated profile data:', updatedProfile);
+        setProfile(prev => ({
+            ...prev,
+            ...updatedProfile
+        }));
+        // Refetch profile to ensure latest data
+        try {
+            const data = await getProfile();
+            console.log('Refetched profile data:', data);
+            setProfile(data);
+        } catch (error) {
+            console.error('Failed to refetch profile:', error);
+        }
+    };
 
     const handleOpenProfileModel = () => setOpenProfileModal(true);
     const handleClose = () => setOpenProfileModal(false);
+    const handleBack = () => navigate(-1);
 
-    const handleBack=()=>navigate(-1)
+    const handleFollowUser = () => {
+        console.log("handle follow user");
+    };
 
-    // const handleOpenProfileModel=()=>{
-    //     console.log("open profile model")
-    // }
-
-    const handleFollowUser=()=>{
-        console.log("handle follow user")
-    }
-
-    const handleChange=(event,newValue)=>{
-        
-        setTabValue(newValue)
-
-        if(newValue===4){
-            console.log("likes tweet")
+    const handleChange = (event, newValue) => {
+        setTabValue(newValue);
+        if (newValue === "4") {
+            console.log("likes tweet");
+        } else if (newValue === "1") {
+            console.log("users tweet");
         }
-        else if(newValue===1){
-            console.log("users tweet")
-        }
-    }
+    };
 
-  return (
-    <div className='ml-[-90px] '>
-      <section className={`z-50 flex items-center sticky top-0 bg-opacity-95 ml-[-20px] bg-white`}>
+    return (
+        <div className='ml-[-90px]'>
+            <section className='z-50 flex items-center sticky top-0 bg-opacity-95 ml-[-20px] bg-white'>
+                <KeyboardBackspaceIcon className='cursor-pointer' onClick={handleBack} />
+                <h1 className='py-5 text-xl font-bold opacity-90 ml-5'>{profile.fullName}</h1>
+            </section>
 
-        <KeyboardBackspaceIcon className='cursor-pointer' onClick={handleBack}/>
-        <h1 className='py-5 text-xl font-bold opacity-90 ml-5'>Kanchana Koralage</h1>
+            <section>
+                {profile.backgroundImage ? (
+                    <img
+                        src={profile.backgroundImage}
+                        alt="Background"
+                        className='w-[100%] h-[20rem] object-cover'
+                        onError={(e) => console.error('Background image failed to load:', profile.backgroundImage)} // Debug log
+                    />
+                ) : (
+                    <div className='w-[100%] h-[20rem] bg-gray-200' />
+                )}
+            </section>
 
-      </section>
+            <section className='pl-6'>
+                <div className='flex justify-between items-start mt-5 h-[5rem]'>
+                    <Avatar
+                        alt={profile.username}
+                        src={profile.profileImage || undefined}
+                        sx={{ width: "10rem", height: "10rem", border: "4px solid white" }}
+                        className='transform -translate-y-24'
+                        onError={(e) => console.error('Profile image failed to load:', profile.profileImage)} // Debug log
+                    />
+                    <Button
+                        variant="contained"
+                        onClick={handleOpenProfileModel}
+                        sx={{ borderRadius: "20px" }}
+                    >
+                        Edit Profile
+                    </Button>
+                </div>
 
-      <section>
-        <img src="https://cdn.pixabay.com/photo/2020/03/13/23/33/trees-4929310_1280.jpg" alt="" className='w-[100%] h-[20rem] object-cover '/>
-      </section>
+                <div>
+                    <div className='flex items-center'>
+                        <h1 className='font-bold text-lg'>{profile.fullName}</h1>
+                        {profile.verified && (<img src={Verified} alt="Verified" className="ml-2 w-5 h-5" />)}
+                    </div>
+                    <h1 className='text-gray-500'>@{profile.username}</h1>
+                </div>
 
-      <section className='pl-6'>
-        <div className='flex justify-between items-start mt-5 h-[5rem]'>
-        <Avatar
-          alt="username"
-          src={ProfileImage}
-          sx={{width:"10rem",
-          height:"10rem",
-          border:"4px solid white"}}
-          className='transform -translate-y-24'
-        />
+                <div className='mt-2 space-y-3'>
+                    <p>{profile.bio}</p>
+                    <div className='py-1 flex space-x-5'>
+                        <div className='flex items-center text-gray-500'>
+                            <BusinessCenterIcon />
+                            <p className='ml-2'>{profile.website}</p>
+                        </div>
+                        <div className='flex items-center text-gray-500'>
+                            <LocationOnIcon />
+                            <p className='ml-2'>{profile.location}</p>
+                        </div>
+                        <div className='flex items-center text-gray-500'>
+                            <CalendarMonthIcon />
+                            <p className='ml-2'>Joined 2025 April</p>
+                        </div>
+                    </div>
 
-        {true?<Button variant="contained" onClick={handleOpenProfileModel} sx={{borderRadius:"20px"}}>Edit Profile</Button>:
-        <Button variant="contained" onClick={handleFollowUser} sx={{borderRadius:"20px"}}>{true?"Follow":"Unfollow"}</Button>}
-        
+                    <div className='flex items-center space-x-5'>
+                        <div className='flex items-center space-x-1 font-semibold'>
+                            <span>100</span>
+                            <span className='text-gray-500'>followers</span>
+                        </div>
+                        <div className='flex items-center space-x-1 font-semibold'>
+                            <span>200</span>
+                            <span className='text-gray-500'>following</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section className='py-5'>
+                <Box sx={{ width: '100%', typography: 'body1' }}>
+                    <TabContext value={tabValue}>
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                            <TabList onChange={handleChange} aria-label="lab API tabs example">
+                                <Tab label="Tweets" value="1" />
+                                <Tab label="Replies" value="2" />
+                                <Tab label="Media" value="3" />
+                                <Tab label="Likes" value="4" />
+                            </TabList>
+                        </Box>
+                        <TabPanel value="1">{[1, 1, 1, 1].map((item, index) => <TweetCard key={index} />)}</TabPanel>
+                        <TabPanel value="2">Replies</TabPanel>
+                        <TabPanel value="3">Media</TabPanel>
+                        <TabPanel value="4">Likes</TabPanel>
+                    </TabContext>
+                </Box>
+            </section>
+
+            <section>
+                <ProfileModal
+                    handleClose={handleClose}
+                    open={openProfileModal}
+                    profile={profile}
+                    onUpdateSuccess={handleProfileUpdate}
+                />
+            </section>
         </div>
-
-        <div>
-            <div className='flex items-center'>
-                <h1 className='font-bold text-lg'>Kanchana Koralage</h1>
-                {true &&(<img src={Verified} alt="" className="ml-2 w-5 h-5" />)}
-            </div>
-
-            <h1 className='text-gray-500'>@kanchana</h1>
-        </div>
-
-        <div className='mt-2 space-y-3'>
-            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
-            <div className='oy-1 flex space-x-5'>
-                <div className='flex ir=tems-center text-gray-500'>
-                    <BusinessCenterIcon/>
-                    <p className='ml-2'>Education</p>
-                </div>
-                <div className='flex ir=tems-center text-gray-500'>
-                    <LocationOnIcon/>
-                    <p className='ml-2'>SriLanka</p>
-                </div>
-                <div className='flex ir=tems-center text-gray-500'>
-                    <CalendarMonthIcon/>
-                    <p className='ml-2'>Joined 2025 April</p>
-                </div>
-            </div>
-
-            <div className='flex items-center space-x-5'>
-                <div className='flex items-center space-x-1 font-semibold'>
-                    <span>100</span>
-                    <span className='text-gray-500'>followers</span>
-                </div>
-                <div className='flex items-center space-x-1 font-semibold'>
-                    <span>200</span>
-                    <span className='text-gray-500'>following</span>
-                </div>
-            </div>
-        </div>
-      </section>
-
-      <section className='py-5'>
-
-      <Box sx={{ width: '100%', typography: 'body1' }}>
-      <TabContext value={tabValue}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <TabList onChange={handleChange} aria-label="lab API tabs example">
-            <Tab label="Tweets" value="1" />
-            <Tab label="Replies" value="2" />
-            <Tab label="Media" value="3" />
-            <Tab label="Likes" value="4" />
-          </TabList>
-        </Box>
-        <TabPanel value="1">{[1,1,1,1].map((item)=><TweetCard/>)}</TabPanel>
-        <TabPanel value="2">Replies</TabPanel>
-        <TabPanel value="3">Media</TabPanel>
-        <TabPanel value="4">Likes</TabPanel>
-      </TabContext>
-    </Box>
-      </section>
-
-      <section>
-        <ProfileModal handleClose={handleClose} open={openProfileModal}/>
-      </section>
-    </div>
-  )
+    );
 }
 
-export default ProfilePage
+export default ProfilePage;
