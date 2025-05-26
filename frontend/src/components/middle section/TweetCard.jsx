@@ -110,19 +110,42 @@ function TweetCard({ post, onPostDeleted }) {
           <div className="mt-2">
             <div className="cursor-pointer" onClick={() => navigate(`/tweet/${post.id}`)}>
               <p className="mb-2 p-0">{post.content}</p>
+              
               {post.imageUrl && post.imageUrl.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {post.imageUrl.map((url, index) => (
+                // CHANGED: Dynamic layout based on image count
+                <div className="max-w-[600px]">
+                  {post.imageUrl.length === 1 ? (
+                    // Single image: full size
                     <img
-                      key={index}
-                      src={url}
+                      src={post.imageUrl[0]}
                       alt="Post"
-                      className="w-[28rem] border border-gray-400 p-5 rounded-md"
-                      onError={(e) => console.error('Image failed to load:', url)}
+                      className="w-full max-w-[600px] h-auto border border-gray-400 p-1 rounded-md object-contain"
+                      onError={(e) => console.error('Image failed to load:', post.imageUrl[0])}
                     />
-                  ))}
+                  ) : (
+                    // 2 or more images: grid layout
+                    <div className={`grid ${post.imageUrl.length >= 3 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-2'} gap-1`}>
+                      {post.imageUrl.slice(0, post.imageUrl.length >= 4 ? 3 : post.imageUrl.length).map((url, index) => (
+                        <div key={index} className="relative">
+                          <img
+                            src={url}
+                            alt="Post"
+                            className="w-full h-[150px] border border-gray-400 p-1 rounded-md object-cover"
+                            onError={(e) => console.error('Image failed to load:', url)}
+                          />
+                          {/* CHANGED: +1 overlay for 4+ images */}
+                          {post.imageUrl.length >= 4 && index === 2 && (
+                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-lg font-bold rounded-md">
+                              +{post.imageUrl.length - 3}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
+
             </div>
             <div className="py-5 flex flex-wrap justify-between items-center">
               <div className="space-x-3 flex items-center text-gray-600">

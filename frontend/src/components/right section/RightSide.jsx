@@ -17,7 +17,7 @@ function RightSide() {
 
   return (
 
-    <div className='py-5 sticky top '>
+    <div className='py-5 sticky top-0 h-screen overflow-y-auto '>
 
         <div className='relative flex items-center'>
 

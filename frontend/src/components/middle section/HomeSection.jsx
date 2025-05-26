@@ -105,24 +105,50 @@ function HomeSection() {
                 )}
               </div>
 
-              {selectedImages.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {selectedImages.map((image, index) => (
-                    <div key={index} className="relative">
+                  {selectedImages.length > 0 && (
+                // CHANGED: Dynamic preview layout
+                <div className="mt-2 max-w-[600px]">
+                  {selectedImages.length === 1 ? (
+                    <div className="relative">
                       <img
-                        src={URL.createObjectURL(image)}
+                        src={URL.createObjectURL(selectedImages[0])}
                         alt="Preview"
-                        className="max-h-40 rounded-md"
+                        className="w-full max-w-[600px] h-auto rounded-md object-contain"
                       />
                       <button
                         type="button"
-                        onClick={() => handleRemoveImage(index)}
+                        onClick={() => handleRemoveImage(0)}
                         className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
                       >
                         ×
                       </button>
                     </div>
-                  ))}
+                  ) : (
+                    <div className={`grid ${selectedImages.length >= 3 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-2'} gap-1`}>
+                      {selectedImages.slice(0, selectedImages.length >= 4 ? 3 : selectedImages.length).map((image, index) => (
+                        <div key={index} className="relative">
+                          <img
+                            src={URL.createObjectURL(image)}
+                            alt="Preview"
+                            className="w-full h-[150px] rounded-md object-cover"
+                          />
+                          {/* CHANGED: +1 overlay for 4 images */}
+                          {selectedImages.length >= 4 && index === 2 && (
+                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-lg font-bold rounded-md">
+                              +{selectedImages.length - 3}
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(index)}
+                            className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -147,17 +173,26 @@ function HomeSection() {
                 <div>
                   <Button
                     type="submit"
+                    variant="contained"
                     disabled={uploadingImage || (!formik.values.content && selectedImages.length === 0)}
+                    className="bg-black text-white rounded-full py-2 px-5" // CHANGED: Added Tailwind fallback
                     sx={{
                       width: "100%",
                       borderRadius: "20px",
                       paddingY: "8px",
                       paddingX: "20px",
                       backgroundColor: "#000000",
-                      color: "white",
+                     color: "white",
+                      "&:hover": {
+                        backgroundColor: "#333333", // CHANGED: Added hover state
+                      },
+                      "&.Mui-disabled": {
+                        backgroundColor: "#666666",
+                        color: "#cccccc",
+                      },
                     }}
                   >
-                    {uploadingImage ? "Posting..." : "Tweet"}
+                    {uploadingImage ? "Posting..." : "Post"}
                   </Button>
                 </div>
               </div>
