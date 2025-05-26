@@ -8,6 +8,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 @Data
 @Entity
 @Table(name = "users")
@@ -45,7 +47,9 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    private boolean verified = false;
+    //private boolean verified = false;
+    @Column(name = "verified")
+    private Boolean verified = false;
     
     private boolean enabled = true;
     
@@ -60,8 +64,12 @@ public class User {
     @ManyToMany(mappedBy = "followers")
     private Set<User> following = new HashSet<>();
     
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Post> posts = new ArrayList<>();
+    // @JsonManagedReference
+    // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    // private List<Post> posts = new ArrayList<>();
+     @JsonManagedReference
+     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+     private List<Post> posts;
     
     @PrePersist
     protected void onCreate() {
