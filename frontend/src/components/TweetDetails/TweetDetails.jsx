@@ -19,7 +19,7 @@ function TweetDetails() {
           onClick={handleBack}
         />
         <h1 className="py-5 text-xl font-bold opacity-90 ml-5">
-          Tweet
+          Tweetssss
         </h1>
 
       </section>

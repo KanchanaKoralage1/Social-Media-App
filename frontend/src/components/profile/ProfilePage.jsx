@@ -14,34 +14,46 @@ import TabPanel from '@mui/lab/TabPanel';
 import TweetCard from '../middle section/TweetCard';
 import ProfileModal from './ProfileModal';
 import { getProfile, BASE_URL } from '../../services/profileService';
+import { getUserPosts } from '../../services/postService';
 
 function ProfilePage() {
     const navigate = useNavigate();
     const [tabValue, setTabValue] = useState("1");
     const [openProfileModal, setOpenProfileModal] = useState(false);
     const [profile, setProfile] = useState({
+        id: null,
         fullName: 'Kanchana Koralage',
         username: 'kanchana',
         bio: 'Lorem ipsum dolor sit amet consectetur adipisicing elit.',
         location: 'SriLanka',
         website: 'Education',
         profileImage: null,
-        backgroundImage: null
+        backgroundImage: null,
+        verified: false
     });
+    const [posts, setPosts] = useState([]);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchProfile = async () => {
+        const fetchData = async () => {
             try {
-                const data = await getProfile();
-                console.log('Fetched profile data:', data);
-                if (data) {
-                    setProfile(data);
+                const profileData = await getProfile();
+                console.log('Fetched profile data:', profileData);
+                if (profileData) {
+                    setProfile(profileData);
+                    // Fetch user posts using profile.id
+                    if (profileData.id) {
+                        const postsData = await getUserPosts(profileData.id);
+                        setPosts(postsData);
+                    }
                 }
+                setError(null);
             } catch (error) {
-                console.error('Failed to fetch profile:', error);
+                console.error('Failed to fetch data:', error);
+                setError('Failed to load profile or posts');
             }
         };
-        fetchProfile();
+        fetchData();
     }, []);
 
     const handleProfileUpdate = async (updatedProfile) => {
@@ -50,7 +62,6 @@ function ProfilePage() {
             ...prev,
             ...updatedProfile
         }));
-        // Refetch profile to ensure latest data
         try {
             const data = await getProfile();
             console.log('Refetched profile data:', data);
@@ -77,6 +88,10 @@ function ProfilePage() {
         }
     };
 
+    const handlePostDeleted = (postId) => {
+        setPosts(posts.filter(post => post.id !== postId));
+    };
+
     return (
         <div className='ml-[-90px]'>
             <section className='z-50 flex items-center sticky top-0 bg-opacity-95 ml-[-20px] bg-white'>
@@ -90,7 +105,7 @@ function ProfilePage() {
                         src={profile.backgroundImage}
                         alt="Background"
                         className='w-[100%] h-[20rem] object-cover'
-                        onError={(e) => console.error('Background image failed to load:', profile.backgroundImage)} // Debug log
+                        onError={(e) => console.error('Background image failed to load:', profile.backgroundImage)}
                     />
                 ) : (
                     <div className='w-[100%] h-[20rem] bg-gray-200' />
@@ -104,7 +119,7 @@ function ProfilePage() {
                         src={profile.profileImage || undefined}
                         sx={{ width: "10rem", height: "10rem", border: "4px solid white" }}
                         className='transform -translate-y-24'
-                        onError={(e) => console.error('Profile image failed to load:', profile.profileImage)} // Debug log
+                        onError={(e) => console.error('Profile image failed to load:', profile.profileImage)}
                     />
                     <Button
                         variant="contained"
@@ -164,7 +179,16 @@ function ProfilePage() {
                                 <Tab label="Likes" value="4" />
                             </TabList>
                         </Box>
-                        <TabPanel value="1">{[1, 1, 1, 1].map((item, index) => <TweetCard key={index} />)}</TabPanel>
+                        <TabPanel value="1">
+                            {error && <p className="text-red-500">{error}</p>}
+                            {posts.length > 0 ? (
+                                posts.map(post => (
+                                    <TweetCard key={post.id} post={post} onPostDeleted={() => handlePostDeleted(post.id)} />
+                                ))
+                            ) : (
+                                <p className="text-gray-500">No tweets yet.</p>
+                            )}
+                        </TabPanel>
                         <TabPanel value="2">Replies</TabPanel>
                         <TabPanel value="3">Media</TabPanel>
                         <TabPanel value="4">Likes</TabPanel>
