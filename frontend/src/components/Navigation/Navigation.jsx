@@ -66,7 +66,7 @@ function Navigation() {
 
   return (
     <>
-      <div className="h-screen sticky top-0">
+      <div className="h-screen sticky top-0 ml-[-10px]">
         <div>
           <div className="py-5">
             <img
@@ -96,20 +96,7 @@ function Navigation() {
         </div>
 
         <div className="py-5">
-          {/* <Button
-            sx={{
-              width: "100%",
-              borderRadius: "29px",
-              py: "15px",
-              backgroundColor: "#000000",
-              color: "white",
-              "&:hover": {
-                backgroundColor: "#333333"
-              }
-            }}
-          >
-            Tweet
-          </Button> */}
+        
         </div>
 
         <div className="flex items-center justify-between p-3 hover:bg-gray-100 rounded-full cursor-pointer">

@@ -17,7 +17,7 @@ function HomePage() {
       </Grid>
 
       
-      <Grid item xs={12} lg={6} className="flex justify-center lg:block ">
+      <Grid item xs={12} lg={6} className="flex justify-center lg:block pl-4 ">
 
         <Routes>
           <Route path="/" element={<HomeSection/>}/>

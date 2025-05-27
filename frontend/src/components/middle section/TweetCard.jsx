@@ -58,21 +58,24 @@ function TweetCard({ post, onPostDeleted }) {
   return (
     <React.Fragment>
       {retweeted && (
-        <div className='flex items-center font-semibold text-gray-700 py-2'>
+        <div className="flex items-center font-semibold text-gray-700 py-2 pl-4"> {/* CHANGED: Added pl-4 */}
           <RepeatIcon />
           <p>You retweeted</p>
         </div>
       )}
 
-      <div className="flex space-x-5">
-        <Avatar
-          onClick={() => navigate(`/profile/${post.user.username}`)}
-          alt={post.user.username}
-          src={post.user.profileImage || undefined}
-          width={30}
-          height={30}
-          className="cursor-pointer"
-        />
+      <div className="flex"> {/* CHANGED: Removed space-x-5 */}
+        <div className="flex flex-col items-center mr-4"> {/* CHANGED: Added wrapper div */}
+          <Avatar
+            onClick={() => navigate(`/profile/${post.user.username}`)}
+            alt={post.user.username}
+            src={post.user.profileImage || undefined}
+            width={30}
+            height={30}
+            className="cursor-pointer"
+          />
+          <div className="w-px h-full bg-gray-300 my-2"></div> {/* CHANGED: Added vertical line */}
+        </div>
         <div className="w-full">
           <div className="flex justify-between items-center">
             <div className="flex cursor-pointer items-center space-x-2">
@@ -112,10 +115,8 @@ function TweetCard({ post, onPostDeleted }) {
               <p className="mb-2 p-0">{post.content}</p>
               
               {post.imageUrl && post.imageUrl.length > 0 && (
-                // CHANGED: Dynamic layout based on image count
                 <div className="max-w-[600px]">
                   {post.imageUrl.length === 1 ? (
-                    // Single image: full size
                     <img
                       src={post.imageUrl[0]}
                       alt="Post"
@@ -123,7 +124,6 @@ function TweetCard({ post, onPostDeleted }) {
                       onError={(e) => console.error('Image failed to load:', post.imageUrl[0])}
                     />
                   ) : (
-                    // 2 or more images: grid layout
                     <div className={`grid ${post.imageUrl.length >= 3 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-2'} gap-1`}>
                       {post.imageUrl.slice(0, post.imageUrl.length >= 4 ? 3 : post.imageUrl.length).map((url, index) => (
                         <div key={index} className="relative">
@@ -133,7 +133,6 @@ function TweetCard({ post, onPostDeleted }) {
                             className="w-full h-[150px] border border-gray-400 p-1 rounded-md object-cover"
                             onError={(e) => console.error('Image failed to load:', url)}
                           />
-                          {/* CHANGED: +1 overlay for 4+ images */}
                           {post.imageUrl.length >= 4 && index === 2 && (
                             <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-lg font-bold rounded-md">
                               +{post.imageUrl.length - 3}
@@ -145,7 +144,6 @@ function TweetCard({ post, onPostDeleted }) {
                   )}
                 </div>
               )}
-
             </div>
             <div className="py-5 flex flex-wrap justify-between items-center">
               <div className="space-x-3 flex items-center text-gray-600">

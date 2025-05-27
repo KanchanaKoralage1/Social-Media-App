@@ -93,8 +93,8 @@ function ProfilePage() {
     };
 
     return (
-        <div className='ml-[-90px]'>
-            <section className='z-50 flex items-center sticky top-0 bg-opacity-95 ml-[-20px] bg-white'>
+        <div className='ml-4 max-w-[600px]'>
+            <section className='z-50 flex items-center sticky top-0 bg-opacity-95  bg-white'>
                 <KeyboardBackspaceIcon className='cursor-pointer' onClick={handleBack} />
                 <h1 className='py-5 text-xl font-bold opacity-90 ml-5'>{profile.fullName}</h1>
             </section>
@@ -104,15 +104,15 @@ function ProfilePage() {
                     <img
                         src={profile.backgroundImage}
                         alt="Background"
-                        className='w-[100%] h-[20rem] object-cover'
+                        className='w-full h-[20rem] object-cover'
                         onError={(e) => console.error('Background image failed to load:', profile.backgroundImage)}
                     />
                 ) : (
-                    <div className='w-[100%] h-[20rem] bg-gray-200' />
+                    <div className='w-full h-[20rem] bg-gray-200' />
                 )}
             </section>
 
-            <section className='pl-6'>
+            <section className='pl-4'>
                 <div className='flex justify-between items-start mt-5 h-[5rem]'>
                     <Avatar
                         alt={profile.username}
@@ -124,7 +124,10 @@ function ProfilePage() {
                     <Button
                         variant="contained"
                         onClick={handleOpenProfileModel}
-                        sx={{ borderRadius: "20px" }}
+                        sx={{ 
+                            borderRadius: "20px" ,
+                            backgroundColor: "#000000",
+                        }}
                     >
                         Edit Profile
                     </Button>
@@ -168,7 +171,7 @@ function ProfilePage() {
                 </div>
             </section>
 
-            <section className='py-5'>
+            <section className='py-5 '>
                 <Box sx={{ width: '100%', typography: 'body1' }}>
                     <TabContext value={tabValue}>
                         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>

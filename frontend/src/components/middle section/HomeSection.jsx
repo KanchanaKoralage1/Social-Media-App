@@ -76,7 +76,7 @@ function HomeSection() {
   };
 
   return (
-    <div className="space-y-5 ml-[-40px]">
+    <div className="space-y-5 ml-4 max-w-[600px]">
       <section>
         <h1 className="py-5 text-xl font-bold opacity-90">Home</h1>
       </section>
