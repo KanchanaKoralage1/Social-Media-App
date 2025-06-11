@@ -1,163 +1,215 @@
-import { useFormik } from "formik";
-import React, { useState, useEffect } from "react";
-import * as Yup from "yup";
-import { Avatar, Button } from "@mui/material";
-import ImageIcon from "@mui/icons-material/Image";
-import FmdGoodIcon from "@mui/icons-material/FmdGood";
-import TagFacesIcon from "@mui/icons-material/TagFaces";
-import TweetCard from "./TweetCard";
-import { createPost, getAllPosts } from "../../services/postService";
-import { getProfile } from "../../services/profileService";
+"use client"
+
+import { useFormik } from "formik"
+import { useState, useEffect } from "react"
+import * as Yup from "yup"
+import { Avatar, Button, IconButton, Divider } from "@mui/material"
+import ImageIcon from "@mui/icons-material/Image"
+import FmdGoodIcon from "@mui/icons-material/FmdGood"
+import TagFacesIcon from "@mui/icons-material/TagFaces"
+import CloseIcon from "@mui/icons-material/Close"
+import TweetCard from "./TweetCard"
+import { createPost, getAllPosts } from "../../services/postService"
+import { getProfile } from "../../services/profileService"
 
 const validationSchema = Yup.object().shape({
   content: Yup.string().required("Tweet text is required"),
-});
+})
 
 function HomeSection() {
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [selectedImages, setSelectedImages] = useState([]);
-  const [posts, setPosts] = useState([]);
-  const [error, setError] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [selectedImages, setSelectedImages] = useState([])
+  const [posts, setPosts] = useState([])
+  const [error, setError] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [activeTab, setActiveTab] = useState("For you")
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [profileData, postsData] = await Promise.all([
-          getProfile(),
-          getAllPosts()
-        ]);
-        setProfile(profileData);
-        setPosts(postsData);
-        setError(null);
+        const [profileData, postsData] = await Promise.all([getProfile(), getAllPosts()])
+        setProfile(profileData)
+        setPosts(postsData)
+        setError(null)
       } catch (err) {
-        setError("Failed to load data");
-        console.error(err);
+        setError("Failed to load data")
+        console.error(err)
       }
-    };
-    fetchData();
-  }, []);
+    }
+    fetchData()
+  }, [])
 
   const handleSubmit = async (values, { resetForm }) => {
     try {
-      setUploadingImage(true);
-      const newPost = await createPost(values.content, selectedImages.length > 0 ? selectedImages : null);
-      setPosts([newPost, ...posts]);
-      resetForm();
-      setSelectedImages([]);
-      setError(null);
+      setUploadingImage(true)
+      const newPost = await createPost(values.content, selectedImages.length > 0 ? selectedImages : null)
+      setPosts([newPost, ...posts])
+      resetForm()
+      setSelectedImages([])
+      setError(null)
     } catch (err) {
-      setError("Failed to create post");
-      console.error(err);
+      setError("Failed to create post")
+      console.error(err)
     } finally {
-      setUploadingImage(false);
+      setUploadingImage(false)
     }
-  };
+  }
 
   const formik = useFormik({
     initialValues: {
       content: "",
-      images: null
+      images: null,
     },
     onSubmit: handleSubmit,
     validationSchema,
-  });
+  })
 
   const handleSelectImage = (event) => {
-    const files = event.target.files;
+    const files = event.target.files
     if (files) {
-      const imageArray = Array.from(files);
-      setSelectedImages(prev => [...prev, ...imageArray]);
+      const imageArray = Array.from(files)
+      setSelectedImages((prev) => [...prev, ...imageArray])
     }
-  };
+  }
 
   const handleRemoveImage = (index) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
-  };
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index))
+  }
 
   return (
-    <div className="space-y-5 ml-4 max-w-[600px]">
-      <section>
-        <h1 className="py-5 text-xl font-bold opacity-90">Home</h1>
-      </section>
+    <div className="border-x border-gray-100">
+      {/* Header */}
+      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100">
+        <div className="px-4 py-3">
+          <h1 className="text-xl font-bold text-gray-900">Home</h1>
+        </div>
 
-      <section className={`pb-10`}>
-        <div>
+        {/* Tabs */}
+        <div className="flex">
+          <div
+            className={`flex-1 py-4 text-center font-bold cursor-pointer hover:bg-gray-50 transition-colors duration-200 ${
+              activeTab === "For you" ? "text-gray-900" : "text-gray-500"
+            }`}
+            onClick={() => setActiveTab("For you")}
+          >
+            <span>For you</span>
+            {activeTab === "For you" && <div className="h-1 w-16 bg-blue-500 rounded-full mx-auto mt-3"></div>}
+          </div>
+          <div
+            className={`flex-1 py-4 text-center font-bold cursor-pointer hover:bg-gray-50 transition-colors duration-200 ${
+              activeTab === "Following" ? "text-gray-900" : "text-gray-500"
+            }`}
+            onClick={() => setActiveTab("Following")}
+          >
+            <span>Following</span>
+            {activeTab === "Following" && <div className="h-1 w-16 bg-blue-500 rounded-full mx-auto mt-3"></div>}
+          </div>
+        </div>
+      </div>
+
+      {/* Tweet Composer */}
+      <div className="px-4 py-3 border-b border-gray-100">
+        <div className="flex space-x-3">
           <Avatar
             alt={profile?.username || "username"}
             src={profile?.profileImage || undefined}
-            width={30}
-            height={30}
+            sx={{
+              width: 48,
+              height: 48,
+            }}
           />
 
           <div className="w-full">
             <form onSubmit={formik.handleSubmit}>
               <div>
-                <input
-                  type="text"
+                <textarea
                   name="content"
-                  placeholder="What is happening"
-                  className={`border-none outline-none text-xl bg-transparent`}
+                  placeholder="What's happening?"
+                  className="w-full border-none outline-none text-xl bg-transparent resize-none placeholder-gray-500"
+                  rows={2}
                   {...formik.getFieldProps("content")}
                 />
                 {formik.errors.content && formik.touched.content && (
-                  <span className="text-red-500">{formik.errors.content}</span>
+                  <span className="text-red-500 text-sm">{formik.errors.content}</span>
                 )}
               </div>
 
-                  {selectedImages.length > 0 && (
-                // CHANGED: Dynamic preview layout
-                <div className="mt-2 max-w-[600px]">
+              {/* Image Preview */}
+              {selectedImages.length > 0 && (
+                <div className="mt-3 rounded-2xl overflow-hidden border border-gray-100">
                   {selectedImages.length === 1 ? (
                     <div className="relative">
                       <img
-                        src={URL.createObjectURL(selectedImages[0])}
+                        src={URL.createObjectURL(selectedImages[0]) || "/placeholder.svg"}
                         alt="Preview"
-                        className="w-full max-w-[600px] h-auto rounded-md object-contain"
+                        className="w-full max-h-[300px] object-cover"
                       />
-                      <button
-                        type="button"
+                      <IconButton
                         onClick={() => handleRemoveImage(0)}
-                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
+                        className="absolute top-2 right-2 bg-black/50 text-white hover:bg-black/70"
+                        size="small"
                       >
-                        ×
-                      </button>
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
                     </div>
                   ) : (
-                    <div className={`grid ${selectedImages.length >= 3 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-2'} gap-1`}>
-                      {selectedImages.slice(0, selectedImages.length >= 4 ? 3 : selectedImages.length).map((image, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={URL.createObjectURL(image)}
-                            alt="Preview"
-                            className="w-full h-[150px] rounded-md object-cover"
-                          />
-                          {/* CHANGED: +1 overlay for 4 images */}
-                          {selectedImages.length >= 4 && index === 2 && (
-                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-lg font-bold rounded-md">
-                              +{selectedImages.length - 3}
-                            </div>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveImage(index)}
-                            className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
+                    <div
+                      className={`grid ${
+                        selectedImages.length === 2
+                          ? "grid-cols-2"
+                          : selectedImages.length === 3
+                            ? "grid-cols-2 grid-rows-2"
+                            : "grid-cols-2 grid-rows-2"
+                      } gap-0.5`}
+                    >
+                      {selectedImages
+                        .slice(0, selectedImages.length >= 4 ? 4 : selectedImages.length)
+                        .map((image, index) => (
+                          <div
+                            key={index}
+                            className={`relative ${
+                              selectedImages.length === 3 && index === 0 ? "row-span-2" : ""
+                            } overflow-hidden`}
                           >
-                            ×
-                          </button>
-                        </div>
-                      ))}
+                            <img
+                              src={URL.createObjectURL(image) || "/placeholder.svg"}
+                              alt="Preview"
+                              className="w-full h-full object-cover"
+                              style={{ height: selectedImages.length <= 2 ? "150px" : "120px" }}
+                            />
+                            {selectedImages.length > 4 && index === 3 && (
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-lg font-bold">
+                                +{selectedImages.length - 4}
+                              </div>
+                            )}
+                            <IconButton
+                              onClick={() => handleRemoveImage(index)}
+                              className="absolute top-1 right-1 bg-black/50 text-white hover:bg-black/70"
+                              size="small"
+                            >
+                              <CloseIcon fontSize="small" />
+                            </IconButton>
+                          </div>
+                        ))}
                     </div>
                   )}
                 </div>
               )}
 
-              {error && <p className="text-red-500 mt-2">{error}</p>}
+              {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
 
-              <div className="flex justify-between items-center mt-5">
-                <div className="flex space-x-5 items-center">
-                  <label className="flex items-center space-x-2 rounded-md cursor-pointer">
-                    <ImageIcon className="text-[#1d9bf0]" />
+              <Divider sx={{ my: 2 }} />
+
+              <div className="flex justify-between items-center">
+                <div className="flex space-x-1">
+                  <IconButton
+                    component="label"
+                    sx={{
+                      color: "#1DA1F2",
+                      "&:hover": { backgroundColor: "rgba(29, 161, 242, 0.1)" },
+                    }}
+                  >
+                    <ImageIcon fontSize="small" />
                     <input
                       type="file"
                       name="imageFile"
@@ -166,52 +218,72 @@ function HomeSection() {
                       accept="image/*"
                       multiple
                     />
-                  </label>
-                  <FmdGoodIcon className="text-[#1d9bf0]" />
-                  <TagFacesIcon className="text-[#1d9bf0]" />
-                </div>
-                <div>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={uploadingImage || (!formik.values.content && selectedImages.length === 0)}
-                    className="bg-black text-white rounded-full py-2 px-5" // CHANGED: Added Tailwind fallback
+                  </IconButton>
+                  <IconButton
                     sx={{
-                      width: "100%",
-                      borderRadius: "20px",
-                      paddingY: "8px",
-                      paddingX: "20px",
-                      backgroundColor: "#000000",
-                     color: "white",
-                      "&:hover": {
-                        backgroundColor: "#333333", // CHANGED: Added hover state
-                      },
-                      "&.Mui-disabled": {
-                        backgroundColor: "#666666",
-                        color: "#cccccc",
-                      },
+                      color: "#1DA1F2",
+                      "&:hover": { backgroundColor: "rgba(29, 161, 242, 0.1)" },
                     }}
                   >
-                    {uploadingImage ? "Posting..." : "Post"}
-                  </Button>
+                    <FmdGoodIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    sx={{
+                      color: "#1DA1F2",
+                      "&:hover": { backgroundColor: "rgba(29, 161, 242, 0.1)" },
+                    }}
+                  >
+                    <TagFacesIcon fontSize="small" />
+                  </IconButton>
                 </div>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={uploadingImage || (!formik.values.content && selectedImages.length === 0)}
+                  sx={{
+                    borderRadius: "9999px",
+                    py: 1,
+                    px: 3,
+                    textTransform: "none",
+                    fontSize: "15px",
+                    fontWeight: 700,
+                    backgroundColor: "#1DA1F2",
+                    boxShadow: "none",
+                    "&:hover": {
+                      backgroundColor: "#1a8cd8",
+                    },
+                    "&.Mui-disabled": {
+                      backgroundColor: "#9BD0F9",
+                      color: "#fff",
+                    },
+                  }}
+                >
+                  {uploadingImage ? "Posting..." : "Tweet"}
+                </Button>
               </div>
             </form>
           </div>
         </div>
-      </section>
-      
-      <section>
+      </div>
+
+      {/* Posts Feed */}
+      <div>
         {posts.length > 0 ? (
           posts.map((post) => (
-            <TweetCard key={post.id} post={post} onPostDeleted={() => setPosts(posts.filter(p => p.id !== post.id))} />
+            <TweetCard
+              key={post.id}
+              post={post}
+              onPostDeleted={() => setPosts(posts.filter((p) => p.id !== post.id))}
+            />
           ))
         ) : (
-          <p className="text-gray-500">No posts yet.</p>
+          <div className="p-8 text-center">
+            <p className="text-gray-500 text-lg">No tweets yet. Start the conversation!</p>
+          </div>
         )}
-      </section>
+      </div>
     </div>
-  );
+  )
 }
 
-export default HomeSection;
+export default HomeSection
