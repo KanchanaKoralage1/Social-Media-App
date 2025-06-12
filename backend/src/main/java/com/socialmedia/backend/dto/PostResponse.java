@@ -33,7 +33,7 @@ public class PostResponse {
         response.setImageUrl(post.getImageUrl());
         response.setCreatedAt(post.getCreatedAt());
         response.setUpdatedAt(post.getUpdatedAt());
-        response.setComments(post.getComments().size());
+        response.setComments(post.getComments() != null ? post.getComments().size() : 0);
         response.setLikes(post.getLikes().size());
         response.setIsLiked(post.getLikes().stream()
             .anyMatch(like -> like.getUser().getId().equals(currentUserId)));

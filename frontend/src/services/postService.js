@@ -72,7 +72,8 @@ export const getAllPosts = async () => {
                 profileImage: post.user.profileImage
                     ? `${BASE_URL}/uploads/${post.user.profileImage}`
                     : null
-            }
+            },
+            comments: post.comments || 0  // Make sure this is included
         }));
     } catch (error) {
         console.error('Error fetching posts:', error);
@@ -82,19 +83,18 @@ export const getAllPosts = async () => {
 
 export const getUserPosts = async (userId) => {
     try {
-        const response = await axios.get(`${API_URL}/user/${userId}`);
+        const response = await axios.get(`${API_URL}/user/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
         const data = response.data;
-        console.log('Fetched user posts:', data);
         return data.map(post => ({
             ...post,
-            imageUrl: post.imageUrl
-                ? post.imageUrl.split(',').map(url => `${BASE_URL}/uploads/${url}`)
-                : [],
+            imageUrl: post.imageUrl ? post.imageUrl.split(',').map(url => `${BASE_URL}/uploads/${url}`) : [],
             user: {
                 ...post.user,
-                profileImage: post.user.profileImage
-                    ? `${BASE_URL}/uploads/${post.user.profileImage}`
-                    : null
+                profileImage: post.user.profileImage ? `${BASE_URL}/uploads/${post.user.profileImage}` : null
             }
         }));
     } catch (error) {
@@ -109,6 +109,20 @@ export const deletePost = async (postId) => {
         console.log('Deleted post:', postId);
     } catch (error) {
         console.error('Error deleting post:', error);
+        throw error;
+    }
+};
+
+export const likePost = async (postId) => {
+    try {
+        if (!postId) {
+            throw new Error("Invalid post ID");
+        }
+        const response = await axios.post(`${API_URL}/${postId}/like`);
+        console.log('Toggled like for post:', postId, response.data);
+        return response.data; // Returns { liked: boolean }
+    } catch (error) {
+        console.error('Error liking post:', error.response ? error.response.data : error.message);
         throw error;
     }
 };

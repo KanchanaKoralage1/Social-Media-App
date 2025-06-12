@@ -3,6 +3,8 @@ import axios from 'axios';
 const API_URL = 'http://localhost:8080/api/profile';
 export const BASE_URL = 'http://localhost:8080';
 
+
+
 // Add axios interceptor to handle token
 axios.interceptors.request.use(
     config => {
@@ -17,16 +19,32 @@ axios.interceptors.request.use(
 
 export const getProfile = async () => {
     try {
-        const response = await axios.get(API_URL);
+        const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
+        const response = await axios.get(API_URL, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
         const data = response.data;
-        console.log('Raw profile response:', data); // Debug log
-        const formattedData = {
-            ...data,
+        console.log('Raw profile response:', data);
+
+        // Format the response data properly
+        return {
+            id: data.id,
+            fullName: data.fullName,
+            username: data.username,
+            bio: data.bio,
+            location: data.location,
+            website: data.website,
             profileImage: data.profileImage ? `${BASE_URL}/uploads/${data.profileImage}` : null,
-            backgroundImage: data.backgroundImage ? `${BASE_URL}/uploads/${data.backgroundImage}` : null
+            backgroundImage: data.backgroundImage ? `${BASE_URL}/uploads/${data.backgroundImage}` : null,
+            verified: data.verified
         };
-        console.log('Formatted profile data:', formattedData); // Debug log
-        return formattedData;
     } catch (error) {
         console.error('Error fetching profile:', error);
         throw error;

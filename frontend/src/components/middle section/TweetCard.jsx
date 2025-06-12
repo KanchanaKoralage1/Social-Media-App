@@ -1,71 +1,86 @@
-"use client"
+import React, { useState } from "react";
+import RepeatIcon from "@mui/icons-material/Repeat";
+import { Avatar, Paper, IconButton } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import Verified from "../../assets/verified.png";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import ReplyModal from "./ReplyModal";
+import { deletePost, likePost } from "../../services/postService";
 
-import React, { useState } from "react"
-import RepeatIcon from "@mui/icons-material/Repeat"
-import { Avatar, Paper, IconButton } from "@mui/material"
-import { useNavigate } from "react-router-dom"
-import Verified from "../../assets/verified.png"
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz"
-import Menu from "@mui/material/Menu"
-import MenuItem from "@mui/material/MenuItem"
-import BarChartIcon from "@mui/icons-material/BarChart"
-import FileUploadIcon from "@mui/icons-material/FileUpload"
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder"
-import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline"
-import FavoriteIcon from "@mui/icons-material/Favorite"
-import DeleteIcon from "@mui/icons-material/Delete"
-import EditIcon from "@mui/icons-material/Edit"
-import ReplyModal from "./ReplyModal"
-import { deletePost } from "../../services/postService"
+function TweetCard({ post, onPostDeleted, onUpdatePost }) {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
+  const [openReplyModal, setOpenReplyModal] = useState(false);
+  const [liked, setLiked] = useState(post.isLiked || false);
+  const [likesCount, setLikesCount] = useState(post.likes || 0);
+  const [retweeted, setRetweeted] = useState(post.retweets > 0);
+  const [retweetsCount, setRetweetsCount] = useState(post.retweets || 0);
+  const [commentsCount, setCommentsCount] = useState(post.comments || 0);
+  const [viewsCount, setViewsCount] = useState(post.views || 0);
+  const navigate = useNavigate();
 
-function TweetCard({ post, onPostDeleted }) {
-  const [anchorEl, setAnchorEl] = useState(null)
-  const open = Boolean(anchorEl)
-  const [openReplyModal, setOpenReplyModal] = useState(false)
-  const [liked, setLiked] = useState(post?.likes > 0)
-  const [retweeted, setRetweeted] = useState(post?.retweets > 0)
-  const navigate = useNavigate()
-
-  // Initialize counters from post data or default to 0
-  const [likesCount, setLikesCount] = useState(post?.likes || 0)
-  const [retweetsCount, setRetweetsCount] = useState(post?.retweets || 0)
-  const [commentsCount, setCommentsCount] = useState(post?.comments || 0)
-  const [viewsCount, setViewsCount] = useState(post?.views || 0)
-
-  const handleOpenReplyModel = () => setOpenReplyModal(true)
-  const handleCloseReplyModal = () => setOpenReplyModal(false)
+  const handleOpenReplyModal = () => setOpenReplyModal(true);
+  const handleCloseReplyModal = () => setOpenReplyModal(false);
 
   const handleClick = (event) => {
-    setAnchorEl(event.currentTarget)
-  }
+    setAnchorEl(event.currentTarget);
+  };
 
   const handleClose = () => {
-    setAnchorEl(null)
-  }
+    setAnchorEl(null);
+  };
 
   const handleDeleteTweet = async () => {
     try {
-      await deletePost(post.id)
-      onPostDeleted()
-      handleClose()
+      await deletePost(post.id);
+      onPostDeleted();
+      handleClose();
     } catch (err) {
-      console.error("Error deleting post:", err)
+      console.error("Error deleting post:", err);
+      alert("Failed to delete post. Please try again.");
     }
-  }
+  };
 
   const handleCreateRetweet = () => {
-    setRetweeted(!retweeted)
-    setRetweetsCount((prevCount) => (retweeted ? prevCount - 1 : prevCount + 1))
-    console.log("Retweet post:", post.id)
-  }
+    // Placeholder: Backend doesn't support retweets
+    setRetweeted(!retweeted);
+    setRetweetsCount((prevCount) => (retweeted ? prevCount - 1 : prevCount + 1));
+    console.log("Retweet post:", post.id);
+  };
 
-  const handleLikeTweet = () => {
-    setLiked(!liked)
-    setLikesCount((prevCount) => (liked ? prevCount - 1 : prevCount + 1))
-    console.log("Like post:", post.id)
-  }
+  const handleLikeTweet = async () => {
+    try {
+      if (!post.id) {
+        throw new Error("Invalid post ID");
+      }
+      const response = await likePost(post.id);
+      setLiked(response.liked);
+      setLikesCount((prevCount) => (response.liked ? prevCount + 1 : prevCount - 1));
+    } catch (error) {
+      console.error("Error liking post:", error.response ? error.response.data : error.message);
+      alert("Failed to like/unlike post. Please try again.");
+    }
+  };
 
-  const currentUser = JSON.parse(localStorage.getItem("user")) || {}
+  const handleCommentAdded = () => {
+    setCommentsCount((prevCount) => prevCount + 1);
+    if (typeof onUpdatePost === "function") {
+      onUpdatePost({ ...post, comments: commentsCount + 1 });
+    } else {
+      console.warn("onUpdatePost is not a function. Post list not updated.");
+    }
+  };
+
+  const currentUser = JSON.parse(localStorage.getItem("user")) || {};
 
   return (
     <React.Fragment>
@@ -109,7 +124,6 @@ function TweetCard({ post, onPostDeleted }) {
                 },
               }}
             />
-            {/* <div className="w-px h-full bg-gradient-to-b from-gray-300 to-transparent my-2"></div> */}
           </div>
 
           <div className="w-full">
@@ -121,7 +135,7 @@ function TweetCard({ post, onPostDeleted }) {
                 <span className="text-gray-500 text-sm">
                   @{post.user.username} · {new Date(post.createdAt).toLocaleTimeString()}
                 </span>
-                {post.user.verified && <img src={Verified || "/placeholder.svg"} alt="" className="ml-2 w-5 h-5" />}
+                {post.user.verified && <img src={Verified} alt="verified" className="ml-2 w-5 h-5" />}
               </div>
 
               {currentUser.username === post.user.username && (
@@ -188,7 +202,7 @@ function TweetCard({ post, onPostDeleted }) {
                   <div className="max-w-[600px] mb-4">
                     {post.imageUrl.length === 1 ? (
                       <img
-                        src={post.imageUrl[0] || "/placeholder.svg"}
+                        src={post.imageUrl[0]}
                         alt="Post"
                         className="w-full max-w-[600px] h-auto rounded-2xl object-contain border border-gray-200"
                         onError={(e) => console.error("Image failed to load:", post.imageUrl[0])}
@@ -202,7 +216,7 @@ function TweetCard({ post, onPostDeleted }) {
                           .map((url, index) => (
                             <div key={index} className="relative">
                               <img
-                                src={url || "/placeholder.svg"}
+                                src={url}
                                 alt="Post"
                                 className="w-full h-[150px] rounded-xl object-cover border border-gray-200"
                                 onError={(e) => console.error("Image failed to load:", url)}
@@ -220,10 +234,9 @@ function TweetCard({ post, onPostDeleted }) {
                 )}
               </div>
 
-              {/* Action Buttons */}
               <div className="flex justify-between items-center pt-4 border-t border-gray-100">
                 <div className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 cursor-pointer transition-colors duration-200 p-2 rounded-full hover:bg-blue-50">
-                  <ChatBubbleOutlineIcon fontSize="small" onClick={handleOpenReplyModel} />
+                  <ChatBubbleOutlineIcon fontSize="small" onClick={handleOpenReplyModal} />
                   <span className="text-sm">{commentsCount}</span>
                 </div>
 
@@ -268,10 +281,15 @@ function TweetCard({ post, onPostDeleted }) {
       </Paper>
 
       <section>
-        <ReplyModal open={openReplyModal} handleClose={handleCloseReplyModal} />
+        <ReplyModal
+          open={openReplyModal}
+          handleClose={handleCloseReplyModal}
+          post={post}
+          onCommentAdded={handleCommentAdded}
+        />
       </section>
     </React.Fragment>
-  )
+  );
 }
 
-export default TweetCard
+export default TweetCard;

@@ -2,15 +2,11 @@ package com.socialmedia.backend.service;
 
 import com.socialmedia.backend.dto.CommentResponse;
 import com.socialmedia.backend.dto.PostResponse;
-import com.socialmedia.backend.model.Like;
-import com.socialmedia.backend.model.Post;
-import com.socialmedia.backend.model.User;
-import com.socialmedia.backend.model.Comment;
-import com.socialmedia.backend.repository.PostRepository;
-import com.socialmedia.backend.repository.LikeRepository;
-import com.socialmedia.backend.repository.CommentRepository;
+import com.socialmedia.backend.model.*;
+import com.socialmedia.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,28 +42,36 @@ public class PostService {
         }
         
         Post savedPost = postRepository.save(post);
-        return convertToDTO(savedPost);
+        return convertToDTO(savedPost, token);
     }
 
-    public List<PostResponse> getUserPosts(Long userId) {
-        return postRepository.findByUserIdOrderByCreatedAtDesc(userId)
-            .stream()
-            .map(this::convertToDTO)
-            .collect(Collectors.toList());
+    public PostResponse getPostById(Long id) {
+        Post post = postRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Post not found"));
+        return convertToDTO(post, null);
     }
 
     public List<PostResponse> getAllPosts() {
         return postRepository.findAllByOrderByCreatedAtDesc()
             .stream()
-            .map(this::convertToDTO)
+            .map(post -> convertToDTO(post, null))
             .collect(Collectors.toList());
     }
 
-    private PostResponse convertToDTO(Post post) {
+    public List<PostResponse> getUserPosts(Long userId) {
+        return postRepository.findByUserIdOrderByCreatedAtDesc(userId)
+            .stream()
+            .map(post -> convertToDTO(post, null))
+            .collect(Collectors.toList());
+    }
+
+    private PostResponse convertToDTO(Post post, String token) {
         PostResponse dto = new PostResponse();
         dto.setId(post.getId());
         dto.setContent(post.getContent());
-        dto.setImageUrl(post.getImageUrl());
+        if (post.getImageUrl() != null && !post.getImageUrl().isEmpty()) {
+            dto.setImageUrl(post.getImageUrl());
+        }
         dto.setCreatedAt(post.getCreatedAt());
         dto.setUpdatedAt(post.getUpdatedAt());
         
@@ -77,38 +81,27 @@ public class PostService {
         userSummary.setFullName(post.getUser().getFullName());
         userSummary.setProfileImage(post.getUser().getProfileImage());
         userSummary.setVerified(post.getUser().getVerified());
-        
         dto.setUser(userSummary);
+
+        // Explicitly fetch comment count
+        int commentCount = commentRepository.countByPostId(post.getId());
+        dto.setComments(commentCount);
+
+        // Set like count and isLiked
+        int likeCount = likeRepository.countByPostId(post.getId());
+        dto.setLikes(likeCount);
+        
+        boolean isLiked = false;
+        if (token != null) {
+            User currentUser = customUserDetailsService.getUserFromToken(token);
+            isLiked = likeRepository.existsByUserIdAndPostId(currentUser.getId(), post.getId());
+        }
+        dto.setIsLiked(isLiked);
+
         return dto;
     }
 
-    public void deletePost(Long postId, String token) {
-        User user = customUserDetailsService.getUserFromToken(token);
-        Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new RuntimeException("Post not found"));
-            
-        if (!post.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("You can only delete your own posts");
-        }
-        
-        postRepository.delete(post);
-    }
-
-    public PostResponse updatePost(Long postId, String content, String token) {
-        User user = customUserDetailsService.getUserFromToken(token);
-        Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new RuntimeException("Post not found"));
-            
-        if (!post.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("You can only update your own posts");
-        }
-        
-        post.setContent(content);
-        Post updatedPost = postRepository.save(post);
-        return convertToDTO(updatedPost);
-    }
-
-
+    @Transactional
     public boolean toggleLike(Long postId, String token) {
         User user = customUserDetailsService.getUserFromToken(token);
         Post post = postRepository.findById(postId)
@@ -167,9 +160,34 @@ public class PostService {
         userSummary.setFullName(comment.getUser().getFullName());
         userSummary.setProfileImage(comment.getUser().getProfileImage());
         userSummary.setVerified(comment.getUser().getVerified());
-
         dto.setUser(userSummary);
+        
         return dto;
     }
 
+    public PostResponse updatePost(Long postId, String content, String token) {
+        User user = customUserDetailsService.getUserFromToken(token);
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new RuntimeException("Post not found"));
+            
+        if (!post.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("You can only update your own posts");
+        }
+        
+        post.setContent(content);
+        Post updatedPost = postRepository.save(post);
+        return convertToDTO(updatedPost, token);
+    }
+
+    public void deletePost(Long postId, String token) {
+        User user = customUserDetailsService.getUserFromToken(token);
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new RuntimeException("Post not found"));
+            
+        if (!post.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("You can only delete your own posts");
+        }
+        
+        postRepository.delete(post);
+    }
 }

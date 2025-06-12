@@ -48,4 +48,8 @@ public class Post {
     
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
     private List<Comment> comments = new ArrayList<>();
+
+    public List<Comment> getComments() {
+        return comments != null ? comments : new ArrayList<>();
+    }
 }

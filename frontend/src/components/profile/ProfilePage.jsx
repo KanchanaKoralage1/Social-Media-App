@@ -35,26 +35,42 @@ function ProfilePage() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const profileData = await getProfile();
-                console.log('Fetched profile data:', profileData);
-                if (profileData) {
-                    setProfile(profileData);
-                    if (profileData.id) {
-                        const postsData = await getUserPosts(profileData.id);
-                        setPosts(postsData);
-                    }
-                }
-                setError(null);
-            } catch (error) {
-                console.error('Failed to fetch data:', error);
-                setError('Failed to load profile or posts');
+    const fetchData = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                navigate('/login');
+                return;
             }
-        };
-        fetchData();
-    }, []);
 
+            const profileData = await getProfile();
+            console.log('Fetched profile data:', profileData);
+            
+            if (profileData?.id) {
+                setProfile(profileData);
+                
+                try {
+                    const postsData = await getUserPosts(profileData.id);
+                    console.log('Fetched posts data:', postsData);
+                    setPosts(postsData);
+                } catch (postError) {
+                    console.error('Failed to fetch posts:', postError);
+                    setError('Failed to load posts');
+                }
+            } else {
+                setError('Invalid profile data');
+            }
+        } catch (error) {
+            console.error('Failed to fetch profile:', error);
+            setError('Failed to load profile');
+            if (error.response?.status === 401) {
+                navigate('/login');
+            }
+        }
+    };
+
+    fetchData();
+}, [navigate]);
     const handleProfileUpdate = async (updatedProfile) => {
         console.log('Updated profile data:', updatedProfile);
         setProfile(prev => ({
@@ -211,3 +227,5 @@ function ProfilePage() {
 }
 
 export default ProfilePage;
+
+

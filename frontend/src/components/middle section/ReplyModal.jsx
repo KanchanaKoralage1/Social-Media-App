@@ -10,7 +10,7 @@ import { useFormik } from "formik";
 import { createComment, getComments } from "../../services/commentService";
 import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
-import * as Yup from 'yup';
+import * as Yup from "yup";
 
 const style = {
   position: "absolute",
@@ -31,10 +31,10 @@ const style = {
 const validationSchema = Yup.object({
   content: Yup.string()
     .required("Reply text is required")
-    .max(280, "Reply cannot exceed 280 characters")
+    .max(280, "Reply cannot exceed 280 characters"),
 });
 
-export default function ReplyModal({ handleClose, open, post }) {
+export default function ReplyModal({ handleClose, open, post, onCommentAdded }) {
   const navigate = useNavigate();
   const [uploadingImage, setUploadingImage] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -55,7 +55,7 @@ export default function ReplyModal({ handleClose, open, post }) {
       const data = await getComments(post.id);
       setComments(data);
     } catch (error) {
-      console.error('Error fetching comments:', error);
+      console.error("Error fetching comments:", error);
       setError("Failed to load comments. Please try again.");
     } finally {
       setLoading(false);
@@ -70,8 +70,9 @@ export default function ReplyModal({ handleClose, open, post }) {
       resetForm();
       setSelectedImage(null);
       await fetchComments();
+      onCommentAdded();
     } catch (error) {
-      console.error('Error creating comment:', error);
+      console.error("Error creating comment:", error);
       setError("Failed to post comment. Please try again.");
     } finally {
       setUploadingImage(false);
@@ -89,7 +90,8 @@ export default function ReplyModal({ handleClose, open, post }) {
   const handleSelectImage = (event) => {
     const file = event.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
+        // 5MB limit
         setError("Image size should be less than 5MB");
         return;
       }
@@ -123,10 +125,10 @@ export default function ReplyModal({ handleClose, open, post }) {
               )}
             </div>
             <p className="mt-2 text-gray-800">{post?.content}</p>
-            {post?.imageUrl && (
-              <img 
-                src={post.imageUrl} 
-                alt="Post" 
+            {post?.imageUrl && post.imageUrl.length > 0 && (
+              <img
+                src={post.imageUrl[0]}
+                alt="Post"
                 className="mt-2 max-w-full rounded-xl"
               />
             )}
@@ -145,7 +147,10 @@ export default function ReplyModal({ handleClose, open, post }) {
             <p className="text-center text-red-500">{error}</p>
           ) : comments.length > 0 ? (
             comments.map((comment) => (
-              <div key={comment.id} className="flex space-x-4 mb-4 p-2 hover:bg-gray-50 rounded-lg">
+              <div
+                key={comment.id}
+                className="flex space-x-4 mb-4 p-2 hover:bg-gray-50 rounded-lg"
+              >
                 <Avatar
                   src={comment.user.profileImage || ProfileImage}
                   alt={comment.user.username}
@@ -157,9 +162,7 @@ export default function ReplyModal({ handleClose, open, post }) {
                     <span className="font-semibold hover:underline cursor-pointer">
                       {comment.user.fullName}
                     </span>
-                    <span className="text-gray-600">
-                      @{comment.user.username}
-                    </span>
+                    <span className="text-gray-600">@{comment.user.username}</span>
                     <span className="text-gray-500 text-sm">
                       • {new Date(comment.createdAt).toLocaleDateString()}
                     </span>
@@ -176,16 +179,15 @@ export default function ReplyModal({ handleClose, open, post }) {
               </div>
             ))
           ) : (
-            <p className="text-center text-gray-500 py-4">No replies yet. Start the conversation!</p>
+            <p className="text-center text-gray-500 py-4">
+              No replies yet. Start the conversation!
+            </p>
           )}
         </div>
 
         {/* Reply Form */}
         <div className="flex space-x-4 pt-2 border-t border-gray-100">
-          <Avatar
-            alt="Your Profile"
-            src={ProfileImage}
-          />
+          <Avatar alt="Your Profile" src={ProfileImage} />
           <div className="w-full">
             <form onSubmit={formik.handleSubmit}>
               <textarea
@@ -218,9 +220,7 @@ export default function ReplyModal({ handleClose, open, post }) {
                 </div>
               )}
 
-              {error && (
-                <p className="text-red-500 text-sm mb-2">{error}</p>
-              )}
+              {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
 
               <div className="flex justify-between items-center mt-4">
                 <div className="flex space-x-2">
@@ -237,16 +237,18 @@ export default function ReplyModal({ handleClose, open, post }) {
                 <Button
                   type="submit"
                   variant="contained"
-                  disabled={uploadingImage || !formik.values.content || !formik.isValid}
+                  disabled={
+                    uploadingImage || !formik.values.content || !formik.isValid
+                  }
                   sx={{
                     borderRadius: "9999px",
                     textTransform: "none",
                     px: 4,
                     py: 1,
                     bgcolor: "#1DA1F2",
-                    '&:hover': {
-                      bgcolor: "#1a8cd8"
-                    }
+                    "&:hover": {
+                      bgcolor: "#1a8cd8",
+                    },
                   }}
                 >
                   {uploadingImage ? "Posting..." : "Reply"}
