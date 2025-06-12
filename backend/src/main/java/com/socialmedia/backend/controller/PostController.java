@@ -1,5 +1,6 @@
 package com.socialmedia.backend.controller;
 
+import com.socialmedia.backend.dto.CommentResponse;
 import com.socialmedia.backend.dto.PostResponse;
 import com.socialmedia.backend.service.PostService;
 import lombok.RequiredArgsConstructor;
@@ -7,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -70,6 +72,43 @@ public class PostController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+
+     @PostMapping("/{postId}/like")
+    public ResponseEntity<?> likePost(
+            @PathVariable Long postId,
+            @RequestHeader("Authorization") String token) {
+        try {
+            boolean liked = postService.toggleLike(postId, token.replace("Bearer ", ""));
+            return ResponseEntity.ok(Map.of("liked", liked));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{postId}/comments")
+    public ResponseEntity<CommentResponse> addComment(
+            @PathVariable Long postId,
+            @RequestHeader("Authorization") String token,
+            @RequestParam("content") String content,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
+        try {
+            CommentResponse comment = postService.addComment(
+                postId,
+                token.replace("Bearer ", ""),
+                content,
+                image
+            );
+            return ResponseEntity.ok(comment);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/{postId}/comments")
+    public ResponseEntity<List<CommentResponse>> getComments(@PathVariable Long postId) {
+        return ResponseEntity.ok(postService.getComments(postId));
     }
 
 }

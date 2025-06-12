@@ -1,9 +1,14 @@
 package com.socialmedia.backend.service;
 
+import com.socialmedia.backend.dto.CommentResponse;
 import com.socialmedia.backend.dto.PostResponse;
+import com.socialmedia.backend.model.Like;
 import com.socialmedia.backend.model.Post;
 import com.socialmedia.backend.model.User;
+import com.socialmedia.backend.model.Comment;
 import com.socialmedia.backend.repository.PostRepository;
+import com.socialmedia.backend.repository.LikeRepository;
+import com.socialmedia.backend.repository.CommentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,6 +19,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostService {
     private final PostRepository postRepository;
+    private final LikeRepository likeRepository;
+    private final CommentRepository commentRepository;
     private final CustomUserDetailsService customUserDetailsService;
     private final FileUploadService fileUploadService;
 
@@ -100,4 +107,69 @@ public class PostService {
         Post updatedPost = postRepository.save(post);
         return convertToDTO(updatedPost);
     }
+
+
+    public boolean toggleLike(Long postId, String token) {
+        User user = customUserDetailsService.getUserFromToken(token);
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        boolean exists = likeRepository.existsByUserIdAndPostId(user.getId(), postId);
+        
+        if (exists) {
+            likeRepository.deleteByUserIdAndPostId(user.getId(), postId);
+            return false;
+        } else {
+            Like like = new Like();
+            like.setUser(user);
+            like.setPost(post);
+            likeRepository.save(like);
+            return true;
+        }
+    }
+
+    public CommentResponse addComment(Long postId, String token, String content, MultipartFile image) {
+        User user = customUserDetailsService.getUserFromToken(token);
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        Comment comment = new Comment();
+        comment.setUser(user);
+        comment.setPost(post);
+        comment.setContent(content);
+
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = fileUploadService.saveFile(image);
+            comment.setImageUrl(imageUrl);
+        }
+
+        Comment savedComment = commentRepository.save(comment);
+        return convertToCommentDTO(savedComment);
+    }
+
+    public List<CommentResponse> getComments(Long postId) {
+        return commentRepository.findByPostIdOrderByCreatedAtDesc(postId)
+            .stream()
+            .map(this::convertToCommentDTO)
+            .collect(Collectors.toList());
+    }
+
+    private CommentResponse convertToCommentDTO(Comment comment) {
+        CommentResponse dto = new CommentResponse();
+        dto.setId(comment.getId());
+        dto.setContent(comment.getContent());
+        dto.setImageUrl(comment.getImageUrl());
+        dto.setCreatedAt(comment.getCreatedAt());
+
+        CommentResponse.UserSummary userSummary = new CommentResponse.UserSummary();
+        userSummary.setId(comment.getUser().getId());
+        userSummary.setUsername(comment.getUser().getUsername());
+        userSummary.setFullName(comment.getUser().getFullName());
+        userSummary.setProfileImage(comment.getUser().getProfileImage());
+        userSummary.setVerified(comment.getUser().getVerified());
+
+        dto.setUser(userSummary);
+        return dto;
+    }
+
 }

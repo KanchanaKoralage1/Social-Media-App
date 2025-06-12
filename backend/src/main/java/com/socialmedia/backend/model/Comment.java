@@ -3,23 +3,22 @@ package com.socialmedia.backend.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-
-@Data
 @Entity
-@Table(name = "posts")
-public class Post {
+@Data
+@Table(name = "comments")
+public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @JsonBackReference
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
+    
+    @ManyToOne
+    @JoinColumn(name = "post_id")
+    private Post post;
     
     @Column(columnDefinition = "TEXT")
     private String content;
@@ -42,10 +41,4 @@ public class Post {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
-    private List<Like> likes = new ArrayList<>();
-    
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
-    private List<Comment> comments = new ArrayList<>();
 }
