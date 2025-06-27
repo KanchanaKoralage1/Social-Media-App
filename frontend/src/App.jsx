@@ -1,32 +1,40 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import HomePage from './components/home/HomePage';
-import LoginPage from './components/authentication/LoginPage';
-import SignupPage from './components/authentication/SignupPage';
-import OAuthCallback from './services/OAuthCallback';
-
-const PrivateRoute = ({ children }) => {
-  const token = localStorage.getItem('token');
-  return token ? children : <Navigate to="/login" />;
-};
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import SignupPage from "./pages/SignupPage";
+import LoginPage from "./pages/LoginPage";
+import Homepage from "./components/home/Homepage";
+import Sidebar from "./components/navigation/Sidebar";
+import Notification from "./components/navigation/Notification";
+import Profile from "./components/navigation/Profile";
+import Saved from "./components/navigation/Saved";
+import Message from "./components/navigation/Message";
+import Explore from "./components/navigation/Explore";
+import Home from "./components/navigation/Home";
+import RightSide from "./components/rightSide/RightSide";
+import ProfilePage from "./components/middle/ProfilePage";
 
 function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
-      <Route path="/auth/callback" element={<OAuthCallback />} />
-      
-      <Route
-        path="/*"
-        element={
-          <PrivateRoute>
-            <HomePage />
-          </PrivateRoute>
-        }
-      />
-      
-    </Routes>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/homepage" element={<Homepage />} />
+        <Route path="/sidebar" element={<Sidebar />} />
+        
+        <Route path="/messages" element={<Message />} /> 
+        <Route path="/explore" element={<Explore />} /> 
+        <Route path="/home" element={<Home />} /> 
+        <Route path="/notifications" element={<Notification />} /> 
+        <Route path="/profile" element={<Profile />} /> 
+        <Route path="/saved" element={<Saved />} /> 
+
+        <Route path="/rightside" element={<RightSide />} /> 
+
+         
+      </Routes>
+    </Router>
   );
 }
 

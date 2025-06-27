@@ -41,11 +41,13 @@ public class SecurityConfig {
                     "/api/auth/signup", 
                     "/api/auth/login",
                     "/api/auth/oauth2/**",
-                    "/oauth2/**"
+                    "/oauth2/**",
+                    "/login/oauth2/**"
                 ).permitAll()
                 .requestMatchers("/api/profile/**").authenticated()
                 .anyRequest().authenticated()
             )
+            
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )

@@ -49,12 +49,18 @@ public class PostController {
     public ResponseEntity<PostResponse> updatePost(
             @PathVariable Long postId,
             @RequestHeader("Authorization") String token,
-            @RequestParam("content") String content) {
+            @RequestParam("content") String content,
+            @RequestParam(value = "images", required = false) MultipartFile[] images,
+            @RequestParam(value = "keptImages", required = false) String keptImages 
+            ){
+
         try {
             PostResponse updatedPost = postService.updatePost(
                 postId,
                 content,
-                token.replace("Bearer ", "")
+                token.replace("Bearer ", ""),
+                images,
+                keptImages
             );
             return ResponseEntity.ok(updatedPost);
         } catch (Exception e) {
@@ -110,5 +116,36 @@ public class PostController {
     public ResponseEntity<List<CommentResponse>> getComments(@PathVariable Long postId) {
         return ResponseEntity.ok(postService.getComments(postId));
     }
+
+    @PutMapping("/{postId}/comments/{commentId}")
+public ResponseEntity<CommentResponse> editComment(
+        @PathVariable Long postId,
+        @PathVariable Long commentId,
+        @RequestHeader("Authorization") String token,
+        @RequestParam("content") String content
+) {
+    try {
+        CommentResponse updated = postService.editComment(
+            postId, commentId, token.replace("Bearer ", ""), content
+        );
+        return ResponseEntity.ok(updated);
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().build();
+    }
+}
+
+@DeleteMapping("/{postId}/comments/{commentId}")
+public ResponseEntity<?> deleteComment(
+        @PathVariable Long postId,
+        @PathVariable Long commentId,
+        @RequestHeader("Authorization") String token
+) {
+    try {
+        postService.deleteComment(postId, commentId, token.replace("Bearer ", ""));
+        return ResponseEntity.ok().build();
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().build();
+    }
+}
 
 }

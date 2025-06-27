@@ -165,19 +165,38 @@ public class PostService {
         return dto;
     }
 
-    public PostResponse updatePost(Long postId, String content, String token) {
-        User user = customUserDetailsService.getUserFromToken(token);
-        Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new RuntimeException("Post not found"));
-            
-        if (!post.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("You can only update your own posts");
-        }
-        
-        post.setContent(content);
-        Post updatedPost = postRepository.save(post);
-        return convertToDTO(updatedPost, token);
+    public PostResponse updatePost(Long postId, String content, String token, MultipartFile[] images, String keptImages) {
+    User user = customUserDetailsService.getUserFromToken(token);
+    Post post = postRepository.findById(postId)
+        .orElseThrow(() -> new RuntimeException("Post not found"));
+
+    if (!post.getUser().getId().equals(user.getId())) {
+        throw new RuntimeException("You can only update your own posts");
     }
+
+    post.setContent(content);
+
+    // Handle keptImages and new images
+    StringBuilder imageUrls = new StringBuilder();
+    if (keptImages != null && !keptImages.isEmpty()) {
+        imageUrls.append(keptImages);
+    }
+    if (images != null && images.length > 0) {
+        for (MultipartFile image : images) {
+            if (!image.isEmpty()) {
+                String imageUrl = fileUploadService.saveFile(image);
+                if (imageUrls.length() > 0) {
+                    imageUrls.append(",");
+                }
+                imageUrls.append(imageUrl);
+            }
+        }
+    }
+    post.setImageUrl(imageUrls.toString());
+
+    Post updatedPost = postRepository.save(post);
+    return convertToDTO(updatedPost, token);
+}
 
     public void deletePost(Long postId, String token) {
         User user = customUserDetailsService.getUserFromToken(token);
@@ -190,4 +209,31 @@ public class PostService {
         
         postRepository.delete(post);
     }
+
+    public CommentResponse editComment(Long postId, Long commentId, String token, String content) {
+    User user = customUserDetailsService.getUserFromToken(token);
+    Comment comment = commentRepository.findById(commentId)
+        .orElseThrow(() -> new RuntimeException("Comment not found"));
+    if (!comment.getUser().getId().equals(user.getId())) {
+        throw new RuntimeException("You can only edit your own comments");
+    }
+    comment.setContent(content);
+    comment.setUpdatedAt(java.time.LocalDateTime.now());
+    Comment updated = commentRepository.save(comment);
+    return convertToCommentDTO(updated);
+}
+
+public void deleteComment(Long postId, Long commentId, String token) {
+    User user = customUserDetailsService.getUserFromToken(token);
+    Comment comment = commentRepository.findById(commentId)
+        .orElseThrow(() -> new RuntimeException("Comment not found"));
+    Post post = comment.getPost();
+    // Allow delete if user is post owner or comment owner
+    if (!comment.getUser().getId().equals(user.getId()) && !post.getUser().getId().equals(user.getId())) {
+        throw new RuntimeException("You can only delete your own comment or comments on your post");
+    }
+    commentRepository.delete(comment);
+}
+
+
 }

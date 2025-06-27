@@ -1,4 +1,3 @@
-// filepath: d:\Social Media App\backend\src\main\java\com\socialmedia\backend\service\AuthService.java
 package com.socialmedia.backend.service;
 
 import com.socialmedia.backend.dto.AuthResponse;
@@ -39,18 +38,23 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFullName(request.getFullName());
-        
+
         userRepository.save(user);
 
         // Generate JWT token
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
         String token = jwtTokenUtil.generateToken(userDetails);
 
+        // Fetch the saved user to get the email (in case of any DB changes)
+        User savedUser = userRepository.findByUsername(request.getUsername())
+            .orElseThrow(() -> new RuntimeException("User not found after signup"));
+
         // Create response
         AuthResponse response = new AuthResponse();
         response.setToken(token);
-        response.setUsername(request.getUsername());
-        
+        response.setUsername(savedUser.getUsername());
+        response.setEmail(savedUser.getEmail());
+
         return response;
     }
 
@@ -62,10 +66,15 @@ public class AuthService {
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsernameOrEmail());
         String token = jwtTokenUtil.generateToken(userDetails);
 
+        // Fetch user from DB to get email
+        User user = userRepository.findByUsername(userDetails.getUsername())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
         AuthResponse response = new AuthResponse();
         response.setToken(token);
-        response.setUsername(userDetails.getUsername());
-        
+        response.setUsername(user.getUsername());
+        response.setEmail(user.getEmail());
+
         return response;
     }
 }
