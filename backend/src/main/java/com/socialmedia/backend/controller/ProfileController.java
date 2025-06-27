@@ -1,5 +1,6 @@
 package com.socialmedia.backend.controller;
 
+import com.socialmedia.backend.dto.ProfileResponse;
 import com.socialmedia.backend.dto.ProfileUpdateRequest;
 import com.socialmedia.backend.model.User;
 import com.socialmedia.backend.service.FileUploadService;
@@ -20,7 +21,11 @@ public class ProfileController {
 
     @GetMapping
     public ResponseEntity<?> getProfile(@RequestHeader("Authorization") String token) {
-        return ResponseEntity.ok(profileService.getProfile(token.replace("Bearer ", "")));
+        // return ResponseEntity.ok(profileService.getProfile(token.replace("Bearer ", "")));
+
+        User user = profileService.getProfile(token.replace("Bearer ", ""));
+    ProfileResponse dto = profileService.toProfileResponse(user);
+    return ResponseEntity.ok(dto);
     }
 
        @PutMapping("/update")
@@ -51,10 +56,29 @@ public ResponseEntity<?> updateProfile(
             request.setProfileImage(profilePath);
         }
 
-        User updatedUser = profileService.updateProfile(cleanToken, request);
-        return ResponseEntity.ok(updatedUser);
+        // User updatedUser = profileService.updateProfile(cleanToken, request);
+        // return ResponseEntity.ok(updatedUser);
+
+
+          User updatedUser = profileService.updateProfile(cleanToken, request);
+    ProfileResponse dto = profileService.toProfileResponse(updatedUser);
+    return ResponseEntity.ok(dto);
+
     } catch (Exception e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 }
+
+@GetMapping("/{username}")
+public ResponseEntity<?> getProfileByUsername(
+        @PathVariable String username,
+        @RequestHeader("Authorization") String token) {
+    User user = profileService.getProfileByUsername(username);
+    if (user == null) {
+        return ResponseEntity.notFound().build();
+    }
+    ProfileResponse dto = profileService.toProfileResponse(user);
+    return ResponseEntity.ok(dto);
+}
+
 }

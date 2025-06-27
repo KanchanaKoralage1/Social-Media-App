@@ -12,6 +12,7 @@ import Explore from "./components/navigation/Explore";
 import Home from "./components/navigation/Home";
 import RightSide from "./components/rightSide/RightSide";
 import ProfilePage from "./components/middle/ProfilePage";
+import Layout from "./components/layout/Layout";
 
 function App() {
   return (
@@ -20,17 +21,21 @@ function App() {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
+
+        {/* <Route path="/sidebar" element={<Sidebar />} />
+        <Route path="/rightside" element={<RightSide />} /> */}
+
+        <Route element={<Layout />}>
         <Route path="/homepage" element={<Homepage />} />
-        <Route path="/sidebar" element={<Sidebar />} />
-        
         <Route path="/messages" element={<Message />} /> 
         <Route path="/explore" element={<Explore />} /> 
         <Route path="/home" element={<Home />} /> 
         <Route path="/notifications" element={<Notification />} /> 
         <Route path="/profile" element={<Profile />} /> 
+        <Route path="/profile/:username" element={<ProfilePage />} />
         <Route path="/saved" element={<Saved />} /> 
 
-        <Route path="/rightside" element={<RightSide />} /> 
+         </Route>
 
          
       </Routes>

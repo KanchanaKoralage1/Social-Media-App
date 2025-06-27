@@ -3,9 +3,9 @@ import Layout from "../layout/Layout";
 
 function Saved() {
   return (
-    <Layout>
+    
       <h1 className="text-2xl font-bold">This is saved post page</h1>
-    </Layout>
+   
   )
 }
 

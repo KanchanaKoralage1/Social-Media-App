@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import PostCard from "../middle/PostCard";
+import { useParams } from "react-router-dom";
 
 const ProfilePage = () => {
   const [profile, setProfile] = useState(null);
@@ -10,14 +11,23 @@ const ProfilePage = () => {
   const [backgroundImageFile, setBackgroundImageFile] = useState(null);
   const profileImageInput = useRef();
   const backgroundImageInput = useRef();
+  const { username } = useParams();
 
   // Fetch profile and posts on mount
   useEffect(() => {
     const fetchProfileAndPosts = async () => {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+       const url = username
+        ? `http://localhost:8080/api/profile/${username}`
+        : "http://localhost:8080/api/profile";
+        
+      // const res = await fetch("http://localhost:8080/api/profile", {
+      //   headers: { Authorization: `Bearer ${token}` },
+      // });
+
+      const res = await fetch(url, {
+  headers: { Authorization: `Bearer ${token}` },
+});
       const data = await res.json();
       setProfile(data);
       setForm({
@@ -49,7 +59,7 @@ const ProfilePage = () => {
       }
     };
     fetchProfileAndPosts();
-  }, []);
+  }, [username]);
 
   // Handle form changes
   const handleChange = (e) => {

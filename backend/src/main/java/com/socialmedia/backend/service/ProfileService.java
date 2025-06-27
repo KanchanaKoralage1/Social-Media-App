@@ -1,5 +1,6 @@
 package com.socialmedia.backend.service;
 
+import com.socialmedia.backend.dto.ProfileResponse;
 import com.socialmedia.backend.dto.ProfileUpdateRequest;
 import com.socialmedia.backend.model.User;
 import com.socialmedia.backend.repository.UserRepository;
@@ -34,4 +35,23 @@ public class ProfileService {
 
         return userRepository.save(user);
     }
+
+
+    public ProfileResponse toProfileResponse(User user) {
+    ProfileResponse dto = new ProfileResponse();
+    dto.setId(user.getId());
+    dto.setUsername(user.getUsername());
+    dto.setFullName(user.getFullName());
+    dto.setProfileImage(user.getProfileImage());
+    dto.setBackgroundImage(user.getBackgroundImage());
+    dto.setBio(user.getBio());
+    dto.setWebsite(user.getWebsite());
+    dto.setLocation(user.getLocation());
+    return dto;
+}
+
+public User getProfileByUsername(String username) {
+    return userRepository.findByUsername(username).orElse(null);
+}
+
 }

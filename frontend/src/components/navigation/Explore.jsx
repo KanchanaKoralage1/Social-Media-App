@@ -3,9 +3,9 @@ import Layout from "../layout/Layout";
 
 function Explore() {
   return (
-    <Layout>
+   
       <h1 className="text-2xl font-bold">This is explore page</h1>
-    </Layout>
+    
   )
 }
 

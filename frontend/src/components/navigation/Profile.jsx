@@ -4,10 +4,10 @@ import ProfilePage from '../middle/ProfilePage';
 
 function Profile() {
   return (
-    <Layout>
+    <div>
       <h1 className="text-2xl font-bold">This is profile page</h1>
       <ProfilePage/>
-    </Layout>
+    </div>
   )
 }
 

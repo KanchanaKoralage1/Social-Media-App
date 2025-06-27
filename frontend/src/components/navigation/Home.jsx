@@ -109,9 +109,14 @@ function Home() {
   };
 
   return (
-    <Layout>
-      <PostCreate onPostCreated={fetchPosts} />
+   
+      
+<div>
+      
+  <PostCreate onPostCreated={fetchPosts} />
+
       <div className="mt-6">
+        
         {loading ? (
           <div className="text-center text-gray-500">Loading posts...</div>
         ) : posts.length === 0 ? (
@@ -130,7 +135,8 @@ function Home() {
           ))
         )}
       </div>
-    </Layout>
+      </div>
+    
   );
 }
 
