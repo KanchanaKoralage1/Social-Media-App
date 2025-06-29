@@ -19,27 +19,28 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final JwtTokenUtil jwtTokenUtil;
+
     @Override
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
         User user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
-            .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email: " + usernameOrEmail));
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "User not found with username or email: " + usernameOrEmail));
 
         return new org.springframework.security.core.userdetails.User(
-            user.getUsername(),
-            user.getPassword(),
-            new ArrayList<>()
-        );
+                user.getUsername(),
+                user.getPassword(),
+                new ArrayList<>());
     }
 
     public User getUserFromToken(String token) {
-    String username = jwtTokenUtil.getUsernameFromToken(token);
-    return userRepository.findByUsername(username)
-        .orElseThrow(() -> new RuntimeException("User not found"));
-}
+        String username = jwtTokenUtil.getUsernameFromToken(token);
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
 
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
     }
 
     public Optional<User> findByUsername(String username) {

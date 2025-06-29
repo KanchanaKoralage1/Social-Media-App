@@ -37,12 +37,12 @@ public class AuthController {
     public ResponseEntity<?> getUserDetails(@RequestHeader("Authorization") String token) {
         String username = jwtTokenUtil.getUsernameFromToken(token.replace("Bearer ", ""));
         User user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         Map<String, String> response = new HashMap<>();
         response.put("email", user.getEmail());
         response.put("username", user.getUsername());
-        
+
         return ResponseEntity.ok(response);
     }
 }

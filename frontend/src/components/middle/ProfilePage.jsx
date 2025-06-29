@@ -17,17 +17,13 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchProfileAndPosts = async () => {
       const token = localStorage.getItem("token");
-       const url = username
+      const url = username
         ? `http://localhost:8080/api/profile/${username}`
         : "http://localhost:8080/api/profile";
-        
-      // const res = await fetch("http://localhost:8080/api/profile", {
-      //   headers: { Authorization: `Bearer ${token}` },
-      // });
 
       const res = await fetch(url, {
-  headers: { Authorization: `Bearer ${token}` },
-});
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
       setProfile(data);
       setForm({
@@ -39,20 +35,25 @@ const ProfilePage = () => {
 
       // Fetch posts for this user
       if (data.id) {
-        const postsRes = await fetch(`http://localhost:8080/api/posts/user/${data.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const postsRes = await fetch(
+          `http://localhost:8080/api/posts/user/${data.id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         const postsData = await postsRes.json();
         setPosts(
           postsData.map((post) => ({
             ...post,
             caption: post.content,
             images: post.imageUrl
-              ? post.imageUrl.split(",").map((img) =>
-                  img.startsWith("http")
-                    ? img
-                    : `http://localhost:8080/uploads/${img}`
-                )
+              ? post.imageUrl
+                  .split(",")
+                  .map((img) =>
+                    img.startsWith("http")
+                      ? img
+                      : `http://localhost:8080/uploads/${img}`
+                  )
               : [],
           }))
         );
@@ -84,7 +85,8 @@ const ProfilePage = () => {
     formData.append("website", form.website);
     formData.append("location", form.location);
     if (profileImageFile) formData.append("profileImage", profileImageFile);
-    if (backgroundImageFile) formData.append("backgroundImage", backgroundImageFile);
+    if (backgroundImageFile)
+      formData.append("backgroundImage", backgroundImageFile);
 
     const res = await fetch("http://localhost:8080/api/profile/update", {
       method: "PUT",
@@ -102,8 +104,25 @@ const ProfilePage = () => {
     }
   };
 
+  const handleDelete = async (post) => {
+  const postId = post.id; // <-- get the id from the post object
+  const token = localStorage.getItem("token");
+  if (!window.confirm("Are you sure you want to delete this post?")) return;
+  const res = await fetch(`http://localhost:8080/api/posts/${postId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.ok) {
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+  } else {
+    alert("Failed to delete post.");
+  }
+};
+
   if (!profile) {
-    return <div className="text-center mt-10 text-gray-500">Loading profile...</div>;
+    return (
+      <div className="text-center mt-10 text-gray-500">Loading profile...</div>
+    );
   }
 
   return (
@@ -140,8 +159,9 @@ const ProfilePage = () => {
       <div className="pt-16 px-6 pb-6">
         <div className="flex justify-between items-center">
           <div>
-            <div className="text-2xl font-bold">{profile.fullName || profile.username}</div>
-            
+            <div className="text-2xl font-bold">
+              {profile.fullName || profile.username}
+            </div>
           </div>
           <button
             className="px-4 py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700"
@@ -159,7 +179,12 @@ const ProfilePage = () => {
           )}
           {profile.website && (
             <span>
-              <a href={profile.website} target="_blank" rel="noopener noreferrer" className="underline">
+              <a
+                href={profile.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
                 {profile.website}
               </a>
             </span>
@@ -188,7 +213,9 @@ const ProfilePage = () => {
             </button>
             <h2 className="text-lg font-bold mb-4">Edit Profile</h2>
             <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">Full Name</label>
+              <label className="block text-sm font-medium mb-1">
+                Full Name
+              </label>
               <input
                 type="text"
                 name="fullName"
@@ -228,7 +255,9 @@ const ProfilePage = () => {
               />
             </div>
             <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">Profile Image</label>
+              <label className="block text-sm font-medium mb-1">
+                Profile Image
+              </label>
               <input
                 type="file"
                 accept="image/*"
@@ -238,7 +267,9 @@ const ProfilePage = () => {
               />
             </div>
             <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">Background Image</label>
+              <label className="block text-sm font-medium mb-1">
+                Background Image
+              </label>
               <input
                 type="file"
                 accept="image/*"
@@ -268,7 +299,8 @@ const ProfilePage = () => {
               key={post.id}
               post={post}
               currentUser={profile}
-              // Optionally add onEdit, onDelete, etc.
+              onDelete={handleDelete}
+             
             />
           ))
         )}

@@ -24,10 +24,9 @@ public class PostController {
             @RequestParam(value = "images", required = false) MultipartFile[] images) {
         try {
             PostResponse newPost = postService.createPost(
-                token.replace("Bearer ", ""),
-                content,
-                images
-            );
+                    token.replace("Bearer ", ""),
+                    content,
+                    images);
             return ResponseEntity.ok(newPost);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
@@ -35,7 +34,9 @@ public class PostController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<PostResponse>> getUserPosts(@PathVariable Long userId) {
+    public ResponseEntity<List<PostResponse>> getUserPosts(
+        @PathVariable Long userId, @RequestHeader("Authorization") String token
+     ) {
         return ResponseEntity.ok(postService.getUserPosts(userId));
     }
 
@@ -44,24 +45,21 @@ public class PostController {
         return ResponseEntity.ok(postService.getAllPosts());
     }
 
-
     @PutMapping("/{postId}")
     public ResponseEntity<PostResponse> updatePost(
             @PathVariable Long postId,
             @RequestHeader("Authorization") String token,
             @RequestParam("content") String content,
             @RequestParam(value = "images", required = false) MultipartFile[] images,
-            @RequestParam(value = "keptImages", required = false) String keptImages 
-            ){
+            @RequestParam(value = "keptImages", required = false) String keptImages) {
 
         try {
             PostResponse updatedPost = postService.updatePost(
-                postId,
-                content,
-                token.replace("Bearer ", ""),
-                images,
-                keptImages
-            );
+                    postId,
+                    content,
+                    token.replace("Bearer ", ""),
+                    images,
+                    keptImages);
             return ResponseEntity.ok(updatedPost);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
@@ -80,8 +78,7 @@ public class PostController {
         }
     }
 
-
-     @PostMapping("/{postId}/like")
+    @PostMapping("/{postId}/like")
     public ResponseEntity<?> likePost(
             @PathVariable Long postId,
             @RequestHeader("Authorization") String token) {
@@ -101,11 +98,10 @@ public class PostController {
             @RequestParam(value = "image", required = false) MultipartFile image) {
         try {
             CommentResponse comment = postService.addComment(
-                postId,
-                token.replace("Bearer ", ""),
-                content,
-                image
-            );
+                    postId,
+                    token.replace("Bearer ", ""),
+                    content,
+                    image);
             return ResponseEntity.ok(comment);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
@@ -118,34 +114,43 @@ public class PostController {
     }
 
     @PutMapping("/{postId}/comments/{commentId}")
-public ResponseEntity<CommentResponse> editComment(
-        @PathVariable Long postId,
-        @PathVariable Long commentId,
-        @RequestHeader("Authorization") String token,
-        @RequestParam("content") String content
-) {
-    try {
-        CommentResponse updated = postService.editComment(
-            postId, commentId, token.replace("Bearer ", ""), content
-        );
-        return ResponseEntity.ok(updated);
-    } catch (Exception e) {
-        return ResponseEntity.badRequest().build();
+    public ResponseEntity<CommentResponse> editComment(
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            @RequestHeader("Authorization") String token,
+            @RequestParam("content") String content) {
+        try {
+            CommentResponse updated = postService.editComment(
+                    postId, commentId, token.replace("Bearer ", ""), content);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
-}
 
-@DeleteMapping("/{postId}/comments/{commentId}")
-public ResponseEntity<?> deleteComment(
-        @PathVariable Long postId,
-        @PathVariable Long commentId,
-        @RequestHeader("Authorization") String token
-) {
-    try {
-        postService.deleteComment(postId, commentId, token.replace("Bearer ", ""));
-        return ResponseEntity.ok().build();
-    } catch (Exception e) {
-        return ResponseEntity.badRequest().build();
+    @DeleteMapping("/{postId}/comments/{commentId}")
+    public ResponseEntity<?> deleteComment(
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            @RequestHeader("Authorization") String token) {
+        try {
+            postService.deleteComment(postId, commentId, token.replace("Bearer ", ""));
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
-}
+
+    @PostMapping("/{postId}/share")
+    public ResponseEntity<?> sharePost(
+            @PathVariable Long postId,
+            @RequestHeader("Authorization") String token) {
+        try {
+            postService.sharePost(postId, token.replace("Bearer ", ""));
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
 }

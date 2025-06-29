@@ -108,6 +108,15 @@ function Home() {
     fetchPosts(); // Refresh posts to update like count and isLiked
   };
 
+  const handleShare = async (post) => {
+  const token = localStorage.getItem("token");
+  await fetch(`http://localhost:8080/api/posts/${post.id}/share`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  fetchPosts(); // Refresh posts to update share count
+};
+
   return (
    
       
@@ -130,7 +139,7 @@ function Home() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onLike={handleLike}
-              // You can implement onLike/onComment/onShare/onSave as needed
+              onShare={handleShare}
             />
           ))
         )}

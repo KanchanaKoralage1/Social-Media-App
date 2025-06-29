@@ -91,9 +91,12 @@ const PostCard = ({
     <div className="bg-white rounded shadow p-4 mb-6 max-w-lg mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-3" 
-        onClick={() => user?.username && navigate(`/profile/${user.username}`)}>
-          
+        <div
+          className="flex items-center gap-3"
+          onClick={() =>
+            user?.username && navigate(`/profile/${user.username}`)
+          }
+        >
           <img
             src={profileImgSrc}
             alt="Profile"
@@ -262,7 +265,8 @@ const PostCard = ({
           onClick={() => onShare && onShare(post)}
           className="flex items-center gap-1 hover:text-green-500"
         >
-          <FiShare2 size={20} /> Share
+          <FiShare2 size={20} />
+          {post.shareCount > 0 && <span>{post.shareCount}</span>} Share
         </button>
         <button
           onClick={() => onSave && onSave(post)}

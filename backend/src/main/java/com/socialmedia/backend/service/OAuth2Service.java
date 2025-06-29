@@ -40,30 +40,29 @@ public class OAuth2Service {
     private GoogleAuthorizationCodeFlow getFlow() {
         if (flow == null) {
             flow = new GoogleAuthorizationCodeFlow.Builder(
-                new NetHttpTransport(),
-                JacksonFactory.getDefaultInstance(),
-                clientId,
-                clientSecret,
-                Arrays.asList("email", "profile")
-            )
-            .setAccessType("offline")
-            .build();
+                    new NetHttpTransport(),
+                    JacksonFactory.getDefaultInstance(),
+                    clientId,
+                    clientSecret,
+                    Arrays.asList("email", "profile"))
+                    .setAccessType("offline")
+                    .build();
         }
         return flow;
     }
 
     public String generateGoogleAuthUrl() {
         return getFlow().newAuthorizationUrl()
-            .setRedirectUri(redirectUri)
-            .build();
+                .setRedirectUri(redirectUri)
+                .build();
     }
 
     public AuthResponse processGoogleCallback(String code) {
         try {
             GoogleTokenResponse tokenResponse = getFlow()
-                .newTokenRequest(code)
-                .setRedirectUri(redirectUri)
-                .execute();
+                    .newTokenRequest(code)
+                    .setRedirectUri(redirectUri)
+                    .execute();
 
             // Get user info from Google
             String email = tokenResponse.parseIdToken().getPayload().getEmail();
@@ -71,14 +70,14 @@ public class OAuth2Service {
 
             // Find or create user
             User user = userRepository.findByEmail(email)
-                .orElseGet(() -> {
-                    User newUser = new User();
-                    newUser.setEmail(email);
-                    newUser.setUsername(email.split("@")[0]);
-                    newUser.setFullName(name);
-                    newUser.setPassword(""); // Google authenticated users don't need password
-                    return userRepository.save(newUser);
-                });
+                    .orElseGet(() -> {
+                        User newUser = new User();
+                        newUser.setEmail(email);
+                        newUser.setUsername(email.split("@")[0]);
+                        newUser.setFullName(name);
+                        newUser.setPassword(""); // Google authenticated users don't need password
+                        return userRepository.save(newUser);
+                    });
 
             // Generate JWT token using UserDetails
             UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());

@@ -35,8 +35,8 @@ public class OAuth2Controller {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Failed to generate Google auth URL: " + e.getMessage());
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to generate Google auth URL: " + e.getMessage());
         }
     }
 
@@ -44,17 +44,17 @@ public class OAuth2Controller {
     public void handleGoogleCallback(@RequestParam String code, HttpServletResponse response) throws IOException {
         try {
             AuthResponse authResponse = oAuth2Service.processGoogleCallback(code);
-            
+
             // Encode the response data as URL hash parameters
             String redirectUrl = String.format("http://localhost:5173/auth/callback#%s",
-                URLEncoder.encode(objectMapper.writeValueAsString(authResponse), StandardCharsets.UTF_8.toString()));
-            
+                    URLEncoder.encode(objectMapper.writeValueAsString(authResponse),
+                            StandardCharsets.UTF_8.toString()));
+
             response.sendRedirect(redirectUrl);
         } catch (Exception e) {
-            response.sendRedirect("http://localhost:5173/login?error=" + 
-                URLEncoder.encode("Failed to authenticate with Google", StandardCharsets.UTF_8.toString()));
+            response.sendRedirect("http://localhost:5173/login?error=" +
+                    URLEncoder.encode("Failed to authenticate with Google", StandardCharsets.UTF_8.toString()));
         }
     }
 
-    
 }

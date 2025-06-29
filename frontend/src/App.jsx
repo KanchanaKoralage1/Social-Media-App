@@ -13,6 +13,7 @@ import Home from "./components/navigation/Home";
 import RightSide from "./components/rightSide/RightSide";
 import ProfilePage from "./components/middle/ProfilePage";
 import Layout from "./components/layout/Layout";
+import PostShare from "./components/middle/PostShare";
 
 function App() {
   return (
@@ -34,7 +35,7 @@ function App() {
         <Route path="/profile" element={<Profile />} /> 
         <Route path="/profile/:username" element={<ProfilePage />} />
         <Route path="/saved" element={<Saved />} /> 
-
+        <Route path="/share/:postId" element={<PostShare />} />
          </Route>
 
          

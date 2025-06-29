@@ -21,64 +21,64 @@ public class ProfileController {
 
     @GetMapping
     public ResponseEntity<?> getProfile(@RequestHeader("Authorization") String token) {
-        // return ResponseEntity.ok(profileService.getProfile(token.replace("Bearer ", "")));
+        // return ResponseEntity.ok(profileService.getProfile(token.replace("Bearer ",
+        // "")));
 
         User user = profileService.getProfile(token.replace("Bearer ", ""));
-    ProfileResponse dto = profileService.toProfileResponse(user);
-    return ResponseEntity.ok(dto);
+        ProfileResponse dto = profileService.toProfileResponse(user);
+        return ResponseEntity.ok(dto);
     }
 
-       @PutMapping("/update")
-public ResponseEntity<?> updateProfile(
-        @RequestHeader("Authorization") String token,
-        @RequestParam(value = "fullName", required = false) String fullName,
-        @RequestParam(value = "bio", required = false) String bio,
-        @RequestParam(value = "website", required = false) String website,
-        @RequestParam(value = "location", required = false) String location,
-        @RequestParam(value = "backgroundImage", required = false) MultipartFile backgroundImage,
-        @RequestParam(value = "profileImage", required = false) MultipartFile profileImage) {
-    
-    try {
-        String cleanToken = token.replace("Bearer ", "");
-        ProfileUpdateRequest request = new ProfileUpdateRequest();
-        request.setFullName(fullName);
-        request.setBio(bio);
-        request.setWebsite(website);
-        request.setLocation(location);
+    @PutMapping("/update")
+    public ResponseEntity<?> updateProfile(
+            @RequestHeader("Authorization") String token,
+            @RequestParam(value = "fullName", required = false) String fullName,
+            @RequestParam(value = "bio", required = false) String bio,
+            @RequestParam(value = "website", required = false) String website,
+            @RequestParam(value = "location", required = false) String location,
+            @RequestParam(value = "backgroundImage", required = false) MultipartFile backgroundImage,
+            @RequestParam(value = "profileImage", required = false) MultipartFile profileImage) {
 
-        // Handle file uploads
-        if (backgroundImage != null && !backgroundImage.isEmpty()) {
-            String backgroundPath = fileUploadService.saveFile(backgroundImage);
-            request.setBackgroundImage(backgroundPath);
+        try {
+            String cleanToken = token.replace("Bearer ", "");
+            ProfileUpdateRequest request = new ProfileUpdateRequest();
+            request.setFullName(fullName);
+            request.setBio(bio);
+            request.setWebsite(website);
+            request.setLocation(location);
+
+            // Handle file uploads
+            if (backgroundImage != null && !backgroundImage.isEmpty()) {
+                String backgroundPath = fileUploadService.saveFile(backgroundImage);
+                request.setBackgroundImage(backgroundPath);
+            }
+            if (profileImage != null && !profileImage.isEmpty()) {
+                String profilePath = fileUploadService.saveFile(profileImage);
+                request.setProfileImage(profilePath);
+            }
+
+            // User updatedUser = profileService.updateProfile(cleanToken, request);
+            // return ResponseEntity.ok(updatedUser);
+
+            User updatedUser = profileService.updateProfile(cleanToken, request);
+            ProfileResponse dto = profileService.toProfileResponse(updatedUser);
+            return ResponseEntity.ok(dto);
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        if (profileImage != null && !profileImage.isEmpty()) {
-            String profilePath = fileUploadService.saveFile(profileImage);
-            request.setProfileImage(profilePath);
+    }
+
+    @GetMapping("/{username}")
+    public ResponseEntity<?> getProfileByUsername(
+            @PathVariable String username,
+            @RequestHeader("Authorization") String token) {
+        User user = profileService.getProfileByUsername(username);
+        if (user == null) {
+            return ResponseEntity.notFound().build();
         }
-
-        // User updatedUser = profileService.updateProfile(cleanToken, request);
-        // return ResponseEntity.ok(updatedUser);
-
-
-          User updatedUser = profileService.updateProfile(cleanToken, request);
-    ProfileResponse dto = profileService.toProfileResponse(updatedUser);
-    return ResponseEntity.ok(dto);
-
-    } catch (Exception e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
+        ProfileResponse dto = profileService.toProfileResponse(user);
+        return ResponseEntity.ok(dto);
     }
-}
-
-@GetMapping("/{username}")
-public ResponseEntity<?> getProfileByUsername(
-        @PathVariable String username,
-        @RequestHeader("Authorization") String token) {
-    User user = profileService.getProfileByUsername(username);
-    if (user == null) {
-        return ResponseEntity.notFound().build();
-    }
-    ProfileResponse dto = profileService.toProfileResponse(user);
-    return ResponseEntity.ok(dto);
-}
 
 }

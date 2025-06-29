@@ -47,7 +47,7 @@ public class AuthService {
 
         // Fetch the saved user to get the email (in case of any DB changes)
         User savedUser = userRepository.findByUsername(request.getUsername())
-            .orElseThrow(() -> new RuntimeException("User not found after signup"));
+                .orElseThrow(() -> new RuntimeException("User not found after signup"));
 
         // Create response
         AuthResponse response = new AuthResponse();
@@ -60,15 +60,14 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(request.getUsernameOrEmail(), request.getPassword())
-        );
+                new UsernamePasswordAuthenticationToken(request.getUsernameOrEmail(), request.getPassword()));
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsernameOrEmail());
         String token = jwtTokenUtil.generateToken(userDetails);
 
         // Fetch user from DB to get email
         User user = userRepository.findByUsername(userDetails.getUsername())
-            .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         AuthResponse response = new AuthResponse();
         response.setToken(token);

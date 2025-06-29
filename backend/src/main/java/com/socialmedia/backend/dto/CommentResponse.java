@@ -10,7 +10,7 @@ public class CommentResponse {
     private String imageUrl;
     private LocalDateTime createdAt;
     private UserSummary user;
-    
+
     @Data
     public static class UserSummary {
         private Long id;
