@@ -12,7 +12,6 @@ import {
 } from "react-icons/fi";
 import PostComment from "./PostComment";
 
-// Helper for formatting date
 const formatDate = (dateStr) => {
   const date = new Date(dateStr);
   return date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
@@ -28,13 +27,12 @@ const PostCard = ({
   onShare,
   onSave,
 }) => {
-  const { user, caption, images, createdAt } = post;
+  const { user, caption, images, createdAt, originalUser, originalContent, originalImages } = post;
   const isOwner = currentUser && user && currentUser.username === user.username;
-  const previewImages = images?.slice(0, 4) || [];
-  const extraCount = images?.length > 4 ? images.length - 4 : 0;
+  const isSharedPost = !!originalUser; // Check if this is a shared post
+  const previewImages = (isSharedPost ? originalImages : images)?.slice(0, 4) || [];
+  const extraCount = (isSharedPost ? originalImages : images)?.length > 4 ? (isSharedPost ? originalImages : images).length - 4 : 0;
   const [showComments, setShowComments] = useState(false);
-
-  // Edit state
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(caption);
   const [editImages, setEditImages] = useState(images || []);
@@ -70,32 +68,19 @@ const PostCard = ({
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
-    onEdit &&
-      onEdit(
-        post,
-        editValue,
-        editImages,
-        newImages.map((img) => img.file)
-      );
+    onEdit && onEdit(post, editValue, editImages, newImages.map((img) => img.file));
     setEditing(false);
   };
 
-  // Get profile image (support both profileImage and profileImg)
-  const profileImgSrc = user?.profileImage
-    ? user.profileImage.startsWith("http")
-      ? user.profileImage
-      : `http://localhost:8080/uploads/${user.profileImage}`
-    : "/default-profile.png";
+  const profileImgSrc = user?.profileImage || "/default-profile.png";
 
   return (
     <div className="bg-white rounded shadow p-4 mb-6 max-w-lg mx-auto">
-      {/* Header */}
+      {/* Header (Sharer or Original Poster) */}
       <div className="flex items-center justify-between mb-2">
         <div
           className="flex items-center gap-3"
-          onClick={() =>
-            user?.username && navigate(`/profile/${user.username}`)
-          }
+          onClick={() => user?.username && navigate(`/profile/${user.username}`)}
         >
           <img
             src={profileImgSrc}
@@ -105,11 +90,14 @@ const PostCard = ({
           <div>
             <div className="font-semibold text-gray-800 flex items-center gap-2">
               {user?.fullName && <span>{user.fullName}</span>}
+              {isSharedPost && (
+                <span className="text-sm text-gray-500">shared a post</span>
+              )}
             </div>
             <div className="text-xs text-gray-500">{formatDate(createdAt)}</div>
           </div>
         </div>
-        {isOwner && (
+        {isOwner && !isSharedPost && (
           <div className="flex gap-2">
             <button
               onClick={() => setEditing(true)}
@@ -128,121 +116,165 @@ const PostCard = ({
           </div>
         )}
       </div>
-      {/* Caption & Images Edit */}
-      {editing ? (
-        <form onSubmit={handleEditSubmit} className="mb-3 flex flex-col gap-2">
-          <input
-            className="border rounded p-2"
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-          />
-          {/* Existing Images */}
-          {editImages.length > 0 && (
-            <div className="grid grid-cols-2 gap-2">
-              {editImages.map((img, idx) => (
-                <div key={idx} className="relative group">
+
+      {/* Shared Post Content */}
+      {isSharedPost && (
+        <div className="border p-3 rounded bg-gray-50 mb-3">
+          <div
+            className="flex items-center gap-3 mb-2"
+            onClick={() =>
+              originalUser?.username && navigate(`/profile/${originalUser.username}`)
+            }
+          >
+            <img
+              src={originalUser?.profileImage || "/default-profile.png"}
+              alt="Original Profile"
+              className="w-8 h-8 rounded-full object-cover border"
+            />
+            <div className="font-semibold text-gray-800">
+              {originalUser?.fullName || originalUser?.username}
+            </div>
+          </div>
+          <div className="text-gray-800 mb-3">{originalContent ?? ""}</div>
+          {originalImages && originalImages.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {previewImages.map((img, idx) => (
+                <div key={idx} className="relative">
                   <img
                     src={typeof img === "string" ? img : img.url}
-                    alt={`edit-img-${idx}`}
-                    className="w-full h-32 object-cover rounded"
+                    alt={`post-img-${idx}`}
+                    className="w-full h-40 object-cover rounded"
                   />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveEditImage(idx)}
-                    className="absolute top-1 right-1 bg-black bg-opacity-60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
-                    title="Remove"
-                  >
-                    <FiX size={16} />
-                  </button>
+                  {idx === 3 && extraCount > 0 && (
+                    <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center rounded">
+                      <span className="text-white text-xl font-bold">
+                        +{extraCount}
+                      </span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           )}
-          {/* New Images */}
-          {newImages.length > 0 && (
-            <div className="grid grid-cols-2 gap-2">
-              {newImages.map((img, idx) => (
-                <div key={idx} className="relative group">
-                  <img
-                    src={img.url}
-                    alt={`new-img-${idx}`}
-                    className="w-full h-32 object-cover rounded"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveNewImage(idx)}
-                    className="absolute top-1 right-1 bg-black bg-opacity-60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
-                    title="Remove"
-                  >
-                    <FiX size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          {/* Add Images Button */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current.click()}
-              className="flex items-center gap-1 px-3 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
-            >
-              <FiImage size={18} />
-              Add Images
-            </button>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              ref={fileInputRef}
-              className="hidden"
-              onChange={handleEditImageChange}
-            />
-            <span className="text-sm text-gray-500">
-              {editImages.length + newImages.length} image
-              {editImages.length + newImages.length !== 1 ? "s" : ""} selected
-            </span>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              className="px-3 py-1 bg-blue-500 text-white rounded"
-            >
-              Save
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditing(false)}
-              className="px-3 py-1 bg-gray-300 rounded"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      ) : (
-        <div className="mb-3 text-gray-800">{caption ?? ""}</div>
-      )}
-      {/* Images (view mode) */}
-      {!editing && images && images.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          {previewImages.map((img, idx) => (
-            <div key={idx} className="relative">
-              <img
-                src={typeof img === "string" ? img : img.url}
-                alt={`post-img-${idx}`}
-                className="w-full h-40 object-cover rounded"
-              />
-              {idx === 3 && extraCount > 0 && (
-                <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center rounded">
-                  <span className="text-white text-xl font-bold">
-                    +{extraCount}
-                  </span>
-                </div>
-              )}
-            </div>
-          ))}
         </div>
       )}
+
+      {/* Regular Post Content (if not shared) */}
+      {!isSharedPost && (
+        <>
+          {editing ? (
+            <form onSubmit={handleEditSubmit} className="mb-3 flex flex-col gap-2">
+              <input
+                className="border rounded p-2"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+              />
+              {editImages.length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {editImages.map((img, idx) => (
+                    <div key={idx} className="relative group">
+                      <img
+                        src={typeof img === "string" ? img : img.url}
+                        alt={`edit-img-${idx}`}
+                        className="w-full h-32 object-cover rounded"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveEditImage(idx)}
+                        className="absolute top-1 right-1 bg-black bg-opacity-60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                        title="Remove"
+                      >
+                        <FiX size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {newImages.length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {newImages.map((img, idx) => (
+                    <div key={idx} className="relative group">
+                      <img
+                        src={img.url}
+                        alt={`new-img-${idx}`}
+                        className="w-full h-32 object-cover rounded"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveNewImage(idx)}
+                        className="absolute top-1 right-1 bg-black bg-opacity-60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                        title="Remove"
+                      >
+                        <FiX size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current.click()}
+                  className="flex items-center gap-1 px-3 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
+                >
+                  <FiImage size={18} />
+                  Add Images
+                </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleEditImageChange}
+                />
+                <span className="text-sm text-gray-500">
+                  {editImages.length + newImages.length} image
+                  {editImages.length + newImages.length !== 1 ? "s" : ""} selected
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="px-3 py-1 bg-blue-500 text-white rounded"
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditing(false)}
+                  className="px-3 py-1 bg-gray-300 rounded"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="mb-3 text-gray-800">{caption ?? ""}</div>
+          )}
+          {images && images.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {previewImages.map((img, idx) => (
+                <div key={idx} className="relative">
+                  <img
+                    src={typeof img === "string" ? img : img.url}
+                    alt={`post-img-${idx}`}
+                    className="w-full h-40 object-cover rounded"
+                  />
+                  {idx === 3 && extraCount > 0 && (
+                    <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center rounded">
+                      <span className="text-white text-xl font-bold">
+                        +{extraCount}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
       {/* Actions */}
       <div className="flex items-center gap-6 text-gray-600 border-t pt-2">
         <button
@@ -275,6 +307,7 @@ const PostCard = ({
           <FiBookmark size={20} />
         </button>
       </div>
+
       {/* Comments Modal */}
       {showComments && (
         <PostComment

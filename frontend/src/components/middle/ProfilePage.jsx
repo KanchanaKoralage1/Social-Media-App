@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
-import PostCard from "../middle/PostCard";
 import { useParams } from "react-router-dom";
+import PostCard from "../middle/PostCard";
 
 const ProfilePage = () => {
   const [profile, setProfile] = useState(null);
@@ -13,7 +13,6 @@ const ProfilePage = () => {
   const backgroundImageInput = useRef();
   const { username } = useParams();
 
-  // Fetch profile and posts on mount
   useEffect(() => {
     const fetchProfileAndPosts = async () => {
       const token = localStorage.getItem("token");
@@ -33,7 +32,6 @@ const ProfilePage = () => {
         location: data.location || "",
       });
 
-      // Fetch posts for this user
       if (data.id) {
         const postsRes = await fetch(
           `http://localhost:8080/api/posts/user/${data.id}`,
@@ -44,16 +42,47 @@ const ProfilePage = () => {
         const postsData = await postsRes.json();
         setPosts(
           postsData.map((post) => ({
-            ...post,
+            id: post.id,
+            user: {
+              username: post.user?.username,
+              fullName: post.user?.fullName,
+              profileImage: post.user?.profileImage
+                ? post.user.profileImage.startsWith("http")
+                  ? post.user.profileImage
+                  : `http://localhost:8080/uploads/${post.user.profileImage}`
+                : "/default-profile.png",
+            },
             caption: post.content,
             images: post.imageUrl
-              ? post.imageUrl
-                  .split(",")
-                  .map((img) =>
-                    img.startsWith("http")
-                      ? img
-                      : `http://localhost:8080/uploads/${img}`
-                  )
+              ? post.imageUrl.split(",").map((img) =>
+                  img.startsWith("http")
+                    ? img
+                    : `http://localhost:8080/uploads/${img}`
+                )
+              : [],
+            createdAt: post.createdAt,
+            likes: post.likes,
+            comments: post.comments,
+            isLiked: post.isLiked,
+            shareCount: post.shareCount,
+            originalUser: post.originalUser
+              ? {
+                  username: post.originalUser.username,
+                  fullName: post.originalUser.fullName,
+                  profileImage: post.originalUser.profileImage
+                    ? post.originalUser.profileImage.startsWith("http")
+                      ? post.originalUser.profileImage
+                      : `http://localhost:8080/uploads/${post.originalUser.profileImage}`
+                    : "/default-profile.png",
+                }
+              : null,
+            originalContent: post.originalContent,
+            originalImages: post.originalImageUrl
+              ? post.originalImageUrl.split(",").map((img) =>
+                  img.startsWith("http")
+                    ? img
+                    : `http://localhost:8080/uploads/${img}`
+                )
               : [],
           }))
         );
@@ -62,12 +91,10 @@ const ProfilePage = () => {
     fetchProfileAndPosts();
   }, [username]);
 
-  // Handle form changes
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Handle image file changes
   const handleProfileImageChange = (e) => {
     setProfileImageFile(e.target.files[0]);
   };
@@ -75,7 +102,6 @@ const ProfilePage = () => {
     setBackgroundImageFile(e.target.files[0]);
   };
 
-  // Handle profile update
   const handleUpdate = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
@@ -105,19 +131,140 @@ const ProfilePage = () => {
   };
 
   const handleDelete = async (post) => {
-  const postId = post.id; // <-- get the id from the post object
-  const token = localStorage.getItem("token");
-  if (!window.confirm("Are you sure you want to delete this post?")) return;
-  const res = await fetch(`http://localhost:8080/api/posts/${postId}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (res.ok) {
-    setPosts((prev) => prev.filter((p) => p.id !== postId));
-  } else {
-    alert("Failed to delete post.");
-  }
-};
+    const token = localStorage.getItem("token");
+    if (!window.confirm("Are you sure you want to delete this post?")) return;
+    const res = await fetch(`http://localhost:8080/api/posts/${post.id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      setPosts((prev) => prev.filter((p) => p.id !== post.id));
+    } else {
+      alert("Failed to delete post.");
+    }
+  };
+
+  const handleLike = async (post) => {
+    const token = localStorage.getItem("token");
+    await fetch(`http://localhost:8080/api/posts/${post.id}/like`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const postsRes = await fetch(
+      `http://localhost:8080/api/posts/user/${profile.id}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    const postsData = await postsRes.json();
+    setPosts(
+      postsData.map((post) => ({
+        id: post.id,
+        user: {
+          username: post.user?.username,
+          fullName: post.user?.fullName,
+          profileImage: post.user?.profileImage
+            ? post.user.profileImage.startsWith("http")
+              ? post.user.profileImage
+              : `http://localhost:8080/uploads/${post.user.profileImage}`
+            : "/default-profile.png",
+        },
+        caption: post.content,
+        images: post.imageUrl
+          ? post.imageUrl.split(",").map((img) =>
+              img.startsWith("http")
+                ? img
+                : `http://localhost:8080/uploads/${img}`
+            )
+          : [],
+        createdAt: post.createdAt,
+        likes: post.likes,
+        comments: post.comments,
+        isLiked: post.isLiked,
+        shareCount: post.shareCount,
+        originalUser: post.originalUser
+          ? {
+              username: post.originalUser.username,
+              fullName: post.originalUser.fullName,
+              profileImage: post.originalUser.profileImage
+                ? post.originalUser.profileImage.startsWith("http")
+                  ? post.originalUser.profileImage
+                  : `http://localhost:8080/uploads/${post.originalUser.profileImage}`
+                : "/default-profile.png",
+            }
+          : null,
+        originalContent: post.originalContent,
+        originalImages: post.originalImageUrl
+          ? post.originalImageUrl.split(",").map((img) =>
+              img.startsWith("http")
+                ? img
+                : `http://localhost:8080/uploads/${img}`
+            )
+          : [],
+      }))
+    );
+  };
+
+  const handleShare = async (post) => {
+    const token = localStorage.getItem("token");
+    await fetch(`http://localhost:8080/api/posts/${post.id}/share`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const postsRes = await fetch(
+      `http://localhost:8080/api/posts/user/${profile.id}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    const postsData = await postsRes.json();
+    setPosts(
+      postsData.map((post) => ({
+        id: post.id,
+        user: {
+          username: post.user?.username,
+          fullName: post.user?.fullName,
+          profileImage: post.user?.profileImage
+            ? post.user.profileImage.startsWith("http")
+              ? post.user.profileImage
+              : `http://localhost:8080/uploads/${post.user.profileImage}`
+            : "/default-profile.png",
+        },
+        caption: post.content,
+        images: post.imageUrl
+          ? post.imageUrl.split(",").map((img) =>
+              img.startsWith("http")
+                ? img
+                : `http://localhost:8080/uploads/${img}`
+            )
+          : [],
+        createdAt: post.createdAt,
+        likes: post.likes,
+        comments: post.comments,
+        isLiked: post.isLiked,
+        shareCount: post.shareCount,
+        originalUser: post.originalUser
+          ? {
+              username: post.originalUser.username,
+              fullName: post.originalUser.fullName,
+              profileImage: post.originalUser.profileImage
+                ? post.originalUser.profileImage.startsWith("http")
+                  ? post.originalUser.profileImage
+                  : `http://localhost:8080/uploads/${post.originalUser.profileImage}`
+                : "/default-profile.png",
+            }
+          : null,
+        originalContent: post.originalContent,
+        originalImages: post.originalImageUrl
+          ? post.originalImageUrl.split(",").map((img) =>
+              img.startsWith("http")
+                ? img
+                : `http://localhost:8080/uploads/${img}`
+            )
+          : [],
+      }))
+    );
+  };
 
   if (!profile) {
     return (
@@ -126,8 +273,7 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="max-w-2xl  mx-auto mt-8 bg-gray-100 rounded shadow overflow-hidden">
-      {/* Background Image */}
+    <div className="max-w-2xl mx-auto mt-8 bg-gray-100 rounded shadow overflow-hidden">
       <div className="relative h-48 bg-gray-200">
         <img
           src={
@@ -140,7 +286,6 @@ const ProfilePage = () => {
           alt="Background"
           className="w-full h-48 object-cover"
         />
-        {/* Profile Image */}
         <div className="absolute left-6 -bottom-12">
           <img
             src={
@@ -155,7 +300,6 @@ const ProfilePage = () => {
           />
         </div>
       </div>
-      {/* Profile Info */}
       <div className="pt-16 px-6 pb-6">
         <div className="flex justify-between items-center">
           <div>
@@ -197,9 +341,8 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Edit Profile Modal */}
       {editMode && (
-        <div className="fixed inset-0  bg-opacity-40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-opacity-40 flex items-center justify-center z-50">
           <form
             onSubmit={handleUpdate}
             className="bg-white rounded shadow-lg p-6 w-full max-w-md relative"
@@ -213,9 +356,7 @@ const ProfilePage = () => {
             </button>
             <h2 className="text-lg font-bold mb-4">Edit Profile</h2>
             <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">
-                Full Name
-              </label>
+              <label className="block text-sm font-medium mb-1">Full Name</label>
               <input
                 type="text"
                 name="fullName"
@@ -288,7 +429,6 @@ const ProfilePage = () => {
         </div>
       )}
 
-      {/* User's Posts */}
       <div className="mt-8 px-6 pb-6">
         <h2 className="text-xl font-bold mb-4">My Posts</h2>
         {posts.length === 0 ? (
@@ -300,7 +440,8 @@ const ProfilePage = () => {
               post={post}
               currentUser={profile}
               onDelete={handleDelete}
-             
+              onLike={handleLike}
+              onShare={handleShare}
             />
           ))
         )}
