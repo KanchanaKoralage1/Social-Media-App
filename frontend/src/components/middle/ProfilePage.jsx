@@ -14,82 +14,85 @@ const ProfilePage = () => {
   const { username } = useParams();
 
   useEffect(() => {
-    const fetchProfileAndPosts = async () => {
-      const token = localStorage.getItem("token");
-      const url = username
-        ? `http://localhost:8080/api/profile/${username}`
-        : "http://localhost:8080/api/profile";
+  const fetchProfileAndPosts = async () => {
+    const token = localStorage.getItem("token");
+    const url = username
+      ? `http://localhost:8080/api/profile/${username}`
+      : "http://localhost:8080/api/profile";
 
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setProfile(data);
-      setForm({
-        fullName: data.fullName || "",
-        bio: data.bio || "",
-        website: data.website || "",
-        location: data.location || "",
-      });
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    console.log("Profile API response:", data); // Debug log
+    setProfile(data);
+    setForm({
+      fullName: data.fullName || "",
+      bio: data.bio || "",
+      website: data.website || "",
+      location: data.location || "",
+    });
 
-      if (data.id) {
-        const postsRes = await fetch(
-          `http://localhost:8080/api/posts/user/${data.id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        const postsData = await postsRes.json();
-        setPosts(
-          postsData.map((post) => ({
-            id: post.id,
-            user: {
-              username: post.user?.username,
-              fullName: post.user?.fullName,
-              profileImage: post.user?.profileImage
-                ? post.user.profileImage.startsWith("http")
-                  ? post.user.profileImage
-                  : `http://localhost:8080/uploads/${post.user.profileImage}`
-                : "/default-profile.png",
-            },
-            caption: post.content,
-            images: post.imageUrl
-              ? post.imageUrl.split(",").map((img) =>
-                  img.startsWith("http")
-                    ? img
-                    : `http://localhost:8080/uploads/${img}`
-                )
-              : [],
-            createdAt: post.createdAt,
-            likes: post.likes,
-            comments: post.comments,
-            isLiked: post.isLiked,
-            shareCount: post.shareCount,
-            originalUser: post.originalUser
-              ? {
-                  username: post.originalUser.username,
-                  fullName: post.originalUser.fullName,
-                  profileImage: post.originalUser.profileImage
-                    ? post.originalUser.profileImage.startsWith("http")
-                      ? post.originalUser.profileImage
-                      : `http://localhost:8080/uploads/${post.originalUser.profileImage}`
-                    : "/default-profile.png",
-                }
-              : null,
-            originalContent: post.originalContent,
-            originalImages: post.originalImageUrl
-              ? post.originalImageUrl.split(",").map((img) =>
-                  img.startsWith("http")
-                    ? img
-                    : `http://localhost:8080/uploads/${img}`
-                )
-              : [],
-          }))
-        );
-      }
-    };
-    fetchProfileAndPosts();
-  }, [username]);
+    if (data.id) {
+      const postsRes = await fetch(
+        `http://localhost:8080/api/posts/user/${data.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const postsData = await postsRes.json();
+      console.log("Posts API response:", postsData); // Debug log
+      setPosts(
+        postsData.map((post) => ({
+          id: post.id,
+          user: {
+            username: post.user?.username,
+            fullName: post.user?.fullName,
+            profileImage: post.user?.profileImage
+              ? post.user.profileImage.startsWith("http")
+                ? post.user.profileImage
+                : `http://localhost:8080/uploads/${post.user.profileImage}`
+              : "/default-profile.png",
+          },
+          caption: post.content,
+          images: post.imageUrl
+            ? post.imageUrl.split(",").map((img) =>
+                img.startsWith("http")
+                  ? img
+                  : `http://localhost:8080/uploads/${img}`
+              )
+            : [],
+          createdAt: post.createdAt,
+          likes: post.likes,
+          comments: post.comments,
+          isLiked: post.isLiked,
+          shareCount: post.shareCount,
+          originalPostId: post.originalPostId || null, // Fixed mapping
+          originalUser: post.originalUser
+            ? {
+                username: post.originalUser.username,
+                fullName: post.originalUser.fullName,
+                profileImage: post.originalUser.profileImage
+                  ? post.originalUser.profileImage.startsWith("http")
+                    ? post.originalUser.profileImage
+                    : `http://localhost:8080/uploads/${post.originalUser.profileImage}`
+                  : "/default-profile.png",
+              }
+            : null,
+          originalContent: post.originalContent,
+          originalImages: post.originalImageUrl
+            ? post.originalImageUrl.split(",").map((img) =>
+                img.startsWith("http")
+                  ? img
+                  : `http://localhost:8080/uploads/${img}`
+              )
+            : [],
+        }))
+      );
+    }
+  };
+  fetchProfileAndPosts();
+}, [username]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -141,6 +144,81 @@ const ProfilePage = () => {
       setPosts((prev) => prev.filter((p) => p.id !== post.id));
     } else {
       alert("Failed to delete post.");
+    }
+  };
+
+  const handleEdit = async (post, updatedContent, keptImages, newImageFiles) => {
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("content", updatedContent);
+
+    // Only include images for non-shared posts
+    if (!post.originalUser) {
+      formData.append("keptImages", keptImages.join(","));
+      newImageFiles.forEach((file) => formData.append("images", file));
+    }
+
+    const res = await fetch(`http://localhost:8080/api/posts/${post.id}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    if (res.ok) {
+      const postsRes = await fetch(
+        `http://localhost:8080/api/posts/user/${profile.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const postsData = await postsRes.json();
+      setPosts(
+        postsData.map((post) => ({
+          id: post.id,
+          user: {
+            username: post.user?.username,
+            fullName: post.user?.fullName,
+            profileImage: post.user?.profileImage
+              ? post.user.profileImage.startsWith("http")
+                ? post.user.profileImage
+                : `http://localhost:8080/uploads/${post.user.profileImage}`
+              : "/default-profile.png",
+          },
+          caption: post.content,
+          images: post.imageUrl
+            ? post.imageUrl.split(",").map((img) =>
+                img.startsWith("http")
+                  ? img
+                  : `http://localhost:8080/uploads/${img}`
+              )
+            : [],
+          createdAt: post.createdAt,
+          likes: post.likes,
+          comments: post.comments,
+          isLiked: post.isLiked,
+          shareCount: post.shareCount,
+          originalUser: post.originalUser
+            ? {
+                username: post.originalUser.username,
+                fullName: post.originalUser.fullName,
+                profileImage: post.originalUser.profileImage
+                  ? post.originalUser.profileImage.startsWith("http")
+                    ? post.originalUser.profileImage
+                    : `http://localhost:8080/uploads/${post.originalUser.profileImage}`
+                  : "/default-profile.png",
+              }
+            : null,
+          originalContent: post.originalContent,
+          originalImages: post.originalImageUrl
+            ? post.originalImageUrl.split(",").map((img) =>
+                img.startsWith("http")
+                  ? img
+                  : `http://localhost:8080/uploads/${img}`
+              )
+            : [],
+        }))
+      );
+    } else {
+      alert("Failed to update post.");
     }
   };
 
@@ -439,6 +517,7 @@ const ProfilePage = () => {
               key={post.id}
               post={post}
               currentUser={profile}
+              onEdit={handleEdit}
               onDelete={handleDelete}
               onLike={handleLike}
               onShare={handleShare}

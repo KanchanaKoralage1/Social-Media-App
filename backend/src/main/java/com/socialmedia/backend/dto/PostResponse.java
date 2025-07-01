@@ -21,6 +21,7 @@ public class PostResponse {
     private UserSummary originalUser;
     private String originalContent;
     private String originalImageUrl;
+    private Long originalPostId;
 
     @Data
     public static class UserSummary {
@@ -60,6 +61,7 @@ public class PostResponse {
         root = root.getOriginalPost();
     }
     if (root != null) {
+        response.setOriginalPostId(root.getId());
         UserSummary originalUserSummary = new UserSummary();
         originalUserSummary.setId(root.getUser().getId());
         originalUserSummary.setUsername(root.getUser().getUsername());

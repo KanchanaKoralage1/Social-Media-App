@@ -14,6 +14,7 @@ import RightSide from "./components/rightSide/RightSide";
 import ProfilePage from "./components/middle/ProfilePage";
 import Layout from "./components/layout/Layout";
 import PostShare from "./components/middle/PostShare";
+import PostPage from "./components/middle/PostPage";
 
 function App() {
   return (
@@ -23,9 +24,7 @@ function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
 
-        {/* <Route path="/sidebar" element={<Sidebar />} />
-        <Route path="/rightside" element={<RightSide />} /> */}
-
+       
         <Route element={<Layout />}>
         <Route path="/homepage" element={<Homepage />} />
         <Route path="/messages" element={<Message />} /> 
@@ -36,6 +35,7 @@ function App() {
         <Route path="/profile/:username" element={<ProfilePage />} />
         <Route path="/saved" element={<Saved />} /> 
         <Route path="/share/:postId" element={<PostShare />} />
+        <Route path="/post/:postId" element={<PostPage/>} />
          </Route>
 
          

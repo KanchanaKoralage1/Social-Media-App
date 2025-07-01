@@ -45,10 +45,10 @@ public class PostService {
         return convertToDTO(savedPost, token);
     }
 
-    public PostResponse getPostById(Long id) {
+    public PostResponse getPostById(Long id, String token) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
-        return convertToDTO(post, null);
+        return convertToDTO(post, token);
     }
 
     public List<PostResponse> getAllPosts() {
@@ -106,6 +106,7 @@ public class PostService {
         root = root.getOriginalPost();
     }
     if (root != null) {
+        dto.setOriginalPostId(root.getId());
         PostResponse.UserSummary originalUserSummary = new PostResponse.UserSummary();
         originalUserSummary.setId(root.getUser().getId());
         originalUserSummary.setUsername(root.getUser().getUsername());
@@ -194,30 +195,34 @@ public class PostService {
             throw new RuntimeException("You can only update your own posts");
         }
 
+        // Allow editing caption for both regular and shared posts
         post.setContent(content);
 
-        // Handle keptImages and new images
-        StringBuilder imageUrls = new StringBuilder();
-        if (keptImages != null && !keptImages.isEmpty()) {
-            imageUrls.append(keptImages);
-        }
-        if (images != null && images.length > 0) {
-            for (MultipartFile image : images) {
-                if (!image.isEmpty()) {
-                    String imageUrl = fileUploadService.saveFile(image);
-                    if (imageUrls.length() > 0) {
-                        imageUrls.append(",");
+        // For regular posts (not shares), handle images
+        if (post.getOriginalPost() == null) { // Check if not a shared post
+            StringBuilder imageUrls = new StringBuilder();
+            if (keptImages != null && !keptImages.isEmpty()) {
+                imageUrls.append(keptImages);
+            }
+            if (images != null && images.length > 0) {
+                for (MultipartFile image : images) {
+                    if (!image.isEmpty()) {
+                        String imageUrl = fileUploadService.saveFile(image);
+                        if (imageUrls.length() > 0) {
+                            imageUrls.append(",");
+                        }
+                        imageUrls.append(imageUrl);
                     }
-                    imageUrls.append(imageUrl);
                 }
             }
+            post.setImageUrl(imageUrls.toString());
         }
-        post.setImageUrl(imageUrls.toString());
 
         Post updatedPost = postRepository.save(post);
         return convertToDTO(updatedPost, token);
     }
 
+    @Transactional
     public void deletePost(Long postId, String token) {
         User user = customUserDetailsService.getUserFromToken(token);
         Post post = postRepository.findById(postId)
@@ -225,6 +230,18 @@ public class PostService {
 
         if (!post.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("You can only delete your own posts");
+        }
+
+        // If this is a shared post, decrement the shareCount of the original post
+        if (post.getOriginalPost() != null) {
+            Post root = post.getOriginalPost();
+            while (root.getOriginalPost() != null) {
+                root = root.getOriginalPost();
+            }
+            if (root.getShareCount() > 0) {
+                root.setShareCount(root.getShareCount() - 1);
+                postRepository.save(root);
+            }
         }
 
         postRepository.delete(post);

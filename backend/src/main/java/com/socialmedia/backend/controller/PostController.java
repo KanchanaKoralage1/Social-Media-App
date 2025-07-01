@@ -153,4 +153,16 @@ public class PostController {
         }
     }
 
+    @GetMapping("/{postId}")
+public ResponseEntity<PostResponse> getPostById(
+        @PathVariable Long postId,
+        @RequestHeader("Authorization") String token) {
+    try {
+        PostResponse post = postService.getPostById(postId, token.replace("Bearer ", ""));
+        return ResponseEntity.ok(post);
+    } catch (Exception e) {
+        return ResponseEntity.status(403).body(null);
+    }
+}
+
 }

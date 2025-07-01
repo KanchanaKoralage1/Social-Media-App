@@ -27,11 +27,24 @@ const PostCard = ({
   onShare,
   onSave,
 }) => {
-  const { user, caption, images, createdAt, originalUser, originalContent, originalImages } = post;
+  const {
+    user,
+    caption,
+    images,
+    createdAt,
+    originalUser,
+    originalContent,
+    originalImages,
+    originalPostId,
+  } = post;
   const isOwner = currentUser && user && currentUser.username === user.username;
-  const isSharedPost = !!originalUser; // Check if this is a shared post
-  const previewImages = (isSharedPost ? originalImages : images)?.slice(0, 4) || [];
-  const extraCount = (isSharedPost ? originalImages : images)?.length > 4 ? (isSharedPost ? originalImages : images).length - 4 : 0;
+  const isSharedPost = !!originalUser;
+  const previewImages =
+    (isSharedPost ? originalImages : images)?.slice(0, 4) || [];
+  const extraCount =
+    (isSharedPost ? originalImages : images)?.length > 4
+      ? (isSharedPost ? originalImages : images).length - 4
+      : 0;
   const [showComments, setShowComments] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(caption);
@@ -68,8 +81,28 @@ const PostCard = ({
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
-    onEdit && onEdit(post, editValue, editImages, newImages.map((img) => img.file));
+    onEdit &&
+      onEdit(
+        post,
+        editValue,
+        isSharedPost ? [] : editImages,
+        isSharedPost ? [] : newImages.map((img) => img.file)
+      );
     setEditing(false);
+  };
+
+  const handlePostClick = (e) => {
+    console.log(
+      "Clicked shared post section, originalPostId:",
+      originalPostId,
+      "event:",
+      e
+    ); // Debug log
+    if (originalPostId) {
+      navigate(`/post/${originalPostId}`);
+    } else {
+      console.warn("No originalPostId found for shared post");
+    }
   };
 
   const profileImgSrc = user?.profileImage || "/default-profile.png";
@@ -79,8 +112,11 @@ const PostCard = ({
       {/* Header (Sharer or Original Poster) */}
       <div className="flex items-center justify-between mb-2">
         <div
-          className="flex items-center gap-3"
-          onClick={() => user?.username && navigate(`/profile/${user.username}`)}
+          className="flex items-center gap-3 cursor-pointer"
+          onClick={() => {
+            console.log("Navigating to profile:", user?.username); // Debug log
+            user?.username && navigate(`/profile/${user.username}`);
+          }}
         >
           <img
             src={profileImgSrc}
@@ -97,7 +133,7 @@ const PostCard = ({
             <div className="text-xs text-gray-500">{formatDate(createdAt)}</div>
           </div>
         </div>
-        {isOwner && !isSharedPost && (
+        {isOwner && (
           <div className="flex gap-2">
             <button
               onClick={() => setEditing(true)}
@@ -117,14 +153,59 @@ const PostCard = ({
         )}
       </div>
 
+      {/* Shared Post Caption Edit */}
+      {editing && isSharedPost && (
+        <form onSubmit={handleEditSubmit} className="mb-3 flex flex-col gap-2">
+          <input
+            className="border rounded p-2"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            placeholder="Edit your share caption..."
+          />
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="px-3 py-1 bg-blue-500 text-white rounded"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="px-3 py-1 bg-gray-300 rounded"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
       {/* Shared Post Content */}
       {isSharedPost && (
-        <div className="border p-3 rounded bg-gray-50 mb-3">
+        <>
+          {!editing && (
+            <div className="text-gray-800 mb-3">{caption ?? ""}</div>
+          )}
+        <div
+          className="border p-3 rounded bg-gray-50 mb-3 cursor-pointer hover:bg-gray-100 transition"
+          onClick={handlePostClick}
+          style={{ pointerEvents: "auto" }} // Ensure clicks are not blocked
+          
+        >
+          {/* {!editing && (
+            <div className="text-gray-800 mb-3">{caption ?? ""}</div>
+          )} */}
           <div
             className="flex items-center gap-3 mb-2"
-            onClick={() =>
-              originalUser?.username && navigate(`/profile/${originalUser.username}`)
-            }
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log(
+                "Navigating to original profile:",
+                originalUser?.username
+              ); // Debug log
+              originalUser?.username &&
+                navigate(`/profile/${originalUser.username}`);
+            }}
           >
             <img
               src={originalUser?.profileImage || "/default-profile.png"}
@@ -144,6 +225,7 @@ const PostCard = ({
                     src={typeof img === "string" ? img : img.url}
                     alt={`post-img-${idx}`}
                     className="w-full h-40 object-cover rounded"
+                    style={{ pointerEvents: "none" }} // Prevent image clicks from interfering
                   />
                   {idx === 3 && extraCount > 0 && (
                     <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center rounded">
@@ -156,14 +238,25 @@ const PostCard = ({
               ))}
             </div>
           )}
+
+          <button
+            onClick={() =>
+              originalPostId && navigate(`/post/${originalPostId}`)
+            }
+            disabled={!originalPostId}
+          ></button>
         </div>
+        </>
       )}
 
-      {/* Regular Post Content (if not shared) */}
+      {/* Regular Post Content */}
       {!isSharedPost && (
         <>
           {editing ? (
-            <form onSubmit={handleEditSubmit} className="mb-3 flex flex-col gap-2">
+            <form
+              onSubmit={handleEditSubmit}
+              className="mb-3 flex flex-col gap-2"
+            >
               <input
                 className="border rounded p-2"
                 value={editValue}
@@ -230,7 +323,8 @@ const PostCard = ({
                 />
                 <span className="text-sm text-gray-500">
                   {editImages.length + newImages.length} image
-                  {editImages.length + newImages.length !== 1 ? "s" : ""} selected
+                  {editImages.length + newImages.length !== 1 ? "s" : ""}{" "}
+                  selected
                 </span>
               </div>
               <div className="flex gap-2">
@@ -308,7 +402,6 @@ const PostCard = ({
         </button>
       </div>
 
-      {/* Comments Modal */}
       {showComments && (
         <PostComment
           postId={post.id}

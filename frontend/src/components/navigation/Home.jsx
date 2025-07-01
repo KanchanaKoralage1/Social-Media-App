@@ -45,7 +45,7 @@ function Home() {
           comments: post.comments,
           isLiked: post.isLiked,
           shareCount: post.shareCount,
-          // Add shared post fields
+          originalPostId: post.originalPostId || null,
           originalUser: post.originalUser
             ? {
                 username: post.originalUser.username,
@@ -90,8 +90,12 @@ function Home() {
     const token = localStorage.getItem("token");
     const formData = new FormData();
     formData.append("content", updatedContent);
-    formData.append("keptImages", keptImages.join(","));
-    newImageFiles.forEach((file) => formData.append("images", file));
+
+    // Only include images for non-shared posts
+    if (!post.originalUser) {
+      formData.append("keptImages", keptImages.join(","));
+      newImageFiles.forEach((file) => formData.append("images", file));
+    }
 
     const res = await fetch(`http://localhost:8080/api/posts/${post.id}`, {
       method: "PUT",
