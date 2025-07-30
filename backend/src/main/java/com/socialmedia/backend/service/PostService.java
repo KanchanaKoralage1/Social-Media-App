@@ -19,6 +19,7 @@ public class PostService {
     private final CommentRepository commentRepository;
     private final CustomUserDetailsService customUserDetailsService;
     private final FileUploadService fileUploadService;
+    private final SavedPostRepository savedPostRepository;
 
     public PostResponse createPost(String token, String content, MultipartFile[] images) {
         User user = customUserDetailsService.getUserFromToken(token);
@@ -101,22 +102,29 @@ public class PostService {
         dto.setShareCount(post.getShareCount());
 
         // --- Add this block to always walk up to the root original post ---
-    Post root = post.getOriginalPost();
-    while (root != null && root.getOriginalPost() != null) {
-        root = root.getOriginalPost();
-    }
-    if (root != null) {
-        dto.setOriginalPostId(root.getId());
-        PostResponse.UserSummary originalUserSummary = new PostResponse.UserSummary();
-        originalUserSummary.setId(root.getUser().getId());
-        originalUserSummary.setUsername(root.getUser().getUsername());
-        originalUserSummary.setFullName(root.getUser().getFullName());
-        originalUserSummary.setProfileImage(root.getUser().getProfileImage());
-        originalUserSummary.setVerified(root.getUser().getVerified());
-        dto.setOriginalUser(originalUserSummary);
-        dto.setOriginalContent(root.getContent());
-        dto.setOriginalImageUrl(root.getImageUrl());
-    }
+        Post root = post.getOriginalPost();
+        while (root != null && root.getOriginalPost() != null) {
+            root = root.getOriginalPost();
+        }
+        if (root != null) {
+            dto.setOriginalPostId(root.getId());
+            PostResponse.UserSummary originalUserSummary = new PostResponse.UserSummary();
+            originalUserSummary.setId(root.getUser().getId());
+            originalUserSummary.setUsername(root.getUser().getUsername());
+            originalUserSummary.setFullName(root.getUser().getFullName());
+            originalUserSummary.setProfileImage(root.getUser().getProfileImage());
+            originalUserSummary.setVerified(root.getUser().getVerified());
+            dto.setOriginalUser(originalUserSummary);
+            dto.setOriginalContent(root.getContent());
+            dto.setOriginalImageUrl(root.getImageUrl());
+        }
+
+        boolean isSaved = false;
+        if (token != null) {
+            User currentUser = customUserDetailsService.getUserFromToken(token);
+            isSaved = savedPostRepository.existsByUserIdAndPostId(currentUser.getId(), post.getId());
+        }
+        dto.setSaved(isSaved);
 
         return dto;
     }
@@ -293,6 +301,36 @@ public class PostService {
         shared.setOriginalPost(root); // always point to root
         postRepository.save(shared);
 
+    }
+
+    @Transactional
+public boolean toggleSave(Long postId, String token) {
+    User user = customUserDetailsService.getUserFromToken(token);
+    Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new RuntimeException("Post not found"));
+
+    boolean exists = savedPostRepository.existsByUserIdAndPostId(user.getId(), postId);
+    if (exists) {
+        System.out.println("Deleting SavedPost for userId: " + user.getId() + ", postId: " + postId);
+        savedPostRepository.deleteByUserIdAndPostId(user.getId(), postId);
+        System.out.println("Deleted SavedPost successfully");
+        return false;
+    } else {
+        SavedPost saved = new SavedPost();
+        saved.setUser(user);
+        saved.setPost(post);
+        savedPostRepository.save(saved);
+        System.out.println("Saved post for userId: " + user.getId() + ", postId: " + postId);
+        return true;
+    }
+}
+
+    public List<PostResponse> getSavedPosts(String token) {
+        User user = customUserDetailsService.getUserFromToken(token);
+        List<SavedPost> saved = savedPostRepository.findByUserId(user.getId());
+        return saved.stream()
+            .map(sp -> convertToDTO(sp.getPost(), token))
+            .collect(Collectors.toList());
     }
 
 }

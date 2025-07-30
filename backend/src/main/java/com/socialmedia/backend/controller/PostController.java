@@ -3,6 +3,7 @@ package com.socialmedia.backend.controller;
 import com.socialmedia.backend.dto.CommentResponse;
 import com.socialmedia.backend.dto.PostResponse;
 import com.socialmedia.backend.service.PostService;
+import com.socialmedia.backend.repository.SavedPostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,8 +36,7 @@ public class PostController {
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<PostResponse>> getUserPosts(
-        @PathVariable Long userId, @RequestHeader("Authorization") String token
-     ) {
+            @PathVariable Long userId, @RequestHeader("Authorization") String token) {
         return ResponseEntity.ok(postService.getUserPosts(userId));
     }
 
@@ -154,15 +154,38 @@ public class PostController {
     }
 
     @GetMapping("/{postId}")
-public ResponseEntity<PostResponse> getPostById(
-        @PathVariable Long postId,
-        @RequestHeader("Authorization") String token) {
-    try {
-        PostResponse post = postService.getPostById(postId, token.replace("Bearer ", ""));
-        return ResponseEntity.ok(post);
-    } catch (Exception e) {
-        return ResponseEntity.status(403).body(null);
+    public ResponseEntity<PostResponse> getPostById(
+            @PathVariable Long postId,
+            @RequestHeader("Authorization") String token) {
+        try {
+            PostResponse post = postService.getPostById(postId, token.replace("Bearer ", ""));
+            return ResponseEntity.ok(post);
+        } catch (Exception e) {
+            return ResponseEntity.status(403).body(null);
+        }
     }
-}
+
+
+    @PostMapping("/{postId}/save")
+    public ResponseEntity<?> savePost(
+            @PathVariable Long postId,
+            @RequestHeader("Authorization") String token) {
+        try {
+            boolean saved = postService.toggleSave(postId, token.replace("Bearer ", ""));
+            return ResponseEntity.ok(Map.of("saved", saved));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/saved")
+    public ResponseEntity<List<PostResponse>> getSavedPosts(
+            @RequestHeader("Authorization") String token) {
+        try {
+            return ResponseEntity.ok(postService.getSavedPosts(token.replace("Bearer ", "")));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 
 }

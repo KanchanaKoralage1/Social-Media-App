@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import lombok.EqualsAndHashCode; 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -54,15 +55,18 @@ public class User {
     private boolean enabled = true;
 
     @ManyToMany
-    @JoinTable(name = "user_followers", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "follower_id"))
-    private Set<User> followers = new HashSet<>();
-
-    @ManyToMany(mappedBy = "followers")
+    @JoinTable(
+        name = "user_following", // Changed to match standard naming
+        joinColumns = @JoinColumn(name = "follower_id"),
+        inverseJoinColumns = @JoinColumn(name = "following_id")
+    )
+    @EqualsAndHashCode.Exclude
     private Set<User> following = new HashSet<>();
 
-    // @JsonManagedReference
-    // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    // private List<Post> posts = new ArrayList<>();
+    @ManyToMany(mappedBy = "following")
+    @EqualsAndHashCode.Exclude
+    private Set<User> followers = new HashSet<>();
+
     @JsonManagedReference
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Post> posts;
@@ -79,13 +83,13 @@ public class User {
     }
 
     public void follow(User userToFollow) {
-        userToFollow.getFollowers().add(this);
         this.following.add(userToFollow);
+        userToFollow.getFollowers().add(this);
     }
 
     public void unfollow(User userToUnfollow) {
-        userToUnfollow.getFollowers().remove(this);
         this.following.remove(userToUnfollow);
+        userToUnfollow.getFollowers().remove(this);
     }
 
     public boolean isFollowing(User user) {
@@ -101,6 +105,7 @@ public class User {
     }
 
     public int getPostsCount() {
-        return posts.size();
+        return posts != null ? posts.size() : 0;
     }
 }
+

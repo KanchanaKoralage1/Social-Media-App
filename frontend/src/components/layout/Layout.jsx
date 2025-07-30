@@ -2,7 +2,7 @@ import React from "react";
 import Sidebar from "../navigation/Sidebar";
 import RightSide from "../rightSide/RightSide";
 import Header from "../navigation/Header";
-import { Outlet } from "react-router-dom";
+import { Outlet} from "react-router-dom";
 
 
 const Layout = ({ children }) => {

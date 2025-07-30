@@ -12,5 +12,8 @@ public class ProfileResponse {
     private String bio;
     private String website;
     private String location;
+    private int followersCount; // Added
+    private int followingCount; // Added
+    private int postsCount; 
     // Add other fields you want to expose
 }

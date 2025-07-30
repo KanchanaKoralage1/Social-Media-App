@@ -17,6 +17,7 @@ public class PostResponse {
     private Integer likes;
     private Boolean isLiked;
     private Integer shareCount;
+    private boolean isSaved;
 
     private UserSummary originalUser;
     private String originalContent;
@@ -55,25 +56,24 @@ public class PostResponse {
         response.setUser(userSummary);
 
         // --- THIS IS THE IMPORTANT PART ---
-    // Always walk up to the root original post
-    Post root = post.getOriginalPost();
-    while (root != null && root.getOriginalPost() != null) {
-        root = root.getOriginalPost();
-    }
-    if (root != null) {
-        response.setOriginalPostId(root.getId());
-        UserSummary originalUserSummary = new UserSummary();
-        originalUserSummary.setId(root.getUser().getId());
-        originalUserSummary.setUsername(root.getUser().getUsername());
-        originalUserSummary.setFullName(root.getUser().getFullName());
-        originalUserSummary.setProfileImage(root.getUser().getProfileImage());
-        originalUserSummary.setVerified(root.getUser().getVerified());
-        response.setOriginalUser(originalUserSummary);
-        response.setOriginalContent(root.getContent());
-        response.setOriginalImageUrl(root.getImageUrl());
-    }
-    // --- END IMPORTANT PART ---
-
+        // Always walk up to the root original post
+        Post root = post.getOriginalPost();
+        while (root != null && root.getOriginalPost() != null) {
+            root = root.getOriginalPost();
+        }
+        if (root != null) {
+            response.setOriginalPostId(root.getId());
+            UserSummary originalUserSummary = new UserSummary();
+            originalUserSummary.setId(root.getUser().getId());
+            originalUserSummary.setUsername(root.getUser().getUsername());
+            originalUserSummary.setFullName(root.getUser().getFullName());
+            originalUserSummary.setProfileImage(root.getUser().getProfileImage());
+            originalUserSummary.setVerified(root.getUser().getVerified());
+            response.setOriginalUser(originalUserSummary);
+            response.setOriginalContent(root.getContent());
+            response.setOriginalImageUrl(root.getImageUrl());
+        }
+        // --- END IMPORTANT PART ---
 
         return response;
     }

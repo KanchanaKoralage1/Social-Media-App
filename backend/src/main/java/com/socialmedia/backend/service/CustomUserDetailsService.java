@@ -5,12 +5,15 @@ import com.socialmedia.backend.repository.UserRepository;
 import com.socialmedia.backend.security.JwtTokenUtil;
 //import com.socialmedia.backend.config.JwtService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -26,10 +29,15 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "User not found with username or email: " + usernameOrEmail));
 
+                        System.out.println("Loaded user: " + user.getUsername());
+        // Add default ROLE_USER authority
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
-                new ArrayList<>());
+                authorities);
     }
 
     public User getUserFromToken(String token) {

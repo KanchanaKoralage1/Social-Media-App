@@ -36,6 +36,7 @@ const PostCard = ({
     originalContent,
     originalImages,
     originalPostId,
+    isSaved
   } = post;
   const isOwner = currentUser && user && currentUser.username === user.username;
   const isSharedPost = !!originalUser;
@@ -53,11 +54,18 @@ const PostCard = ({
   const fileInputRef = useRef();
   const navigate = useNavigate();
 
+  const [isPostSaved, setIsPostSaved] = useState(isSaved)
+
   useEffect(() => {
     setEditValue(caption);
     setEditImages(images || []);
     setNewImages([]);
   }, [caption, images, editing]);
+
+
+  useEffect(() => {
+    setIsPostSaved(isSaved)
+  }, [isSaved])
 
   const handleRemoveEditImage = (idx) => {
     setEditImages((prev) => prev.filter((_, i) => i !== idx));
@@ -106,6 +114,27 @@ const PostCard = ({
   };
 
   const profileImgSrc = user?.profileImage || "/default-profile.png";
+
+   const handleToggleSave = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+
+    try {
+      const res = await fetch(`http://localhost:8080/api/posts/${post.id}/save`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setIsPostSaved(data.saved) // Update local state based on backend response
+        if (onSave) onSave(post, data.saved) // Pass post and new saved status to parent
+      } else {
+        alert("Failed to toggle save status.")
+      }
+    } catch (err) {
+      alert("Network error while toggling save status.")
+    }
+  }
 
   return (
     <div className="bg-white rounded shadow p-4 mb-6 max-w-lg mx-auto">
@@ -192,9 +221,7 @@ const PostCard = ({
           style={{ pointerEvents: "auto" }} // Ensure clicks are not blocked
           
         >
-          {/* {!editing && (
-            <div className="text-gray-800 mb-3">{caption ?? ""}</div>
-          )} */}
+          
           <div
             className="flex items-center gap-3 mb-2"
             onClick={(e) => {
@@ -394,12 +421,14 @@ const PostCard = ({
           <FiShare2 size={20} />
           {post.shareCount > 0 && <span>{post.shareCount}</span>} Share
         </button>
+
         <button
-          onClick={() => onSave && onSave(post)}
-          className="ml-auto hover:text-yellow-500"
+          onClick={handleToggleSave} // Highlight: Use the new handler
+          className={`ml-auto ${isPostSaved ? "text-yellow-500" : "hover:text-yellow-500"}`} // Highlight: Conditional styling
+          title={isPostSaved ? "Unsave Post" : "Save Post"} // Highlight: Dynamic title
         >
-          <FiBookmark size={20} />
-        </button>
+  <FiBookmark size={20} />
+</button>
       </div>
 
       {showComments && (

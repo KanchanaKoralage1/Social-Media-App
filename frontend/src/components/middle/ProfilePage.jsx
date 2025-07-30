@@ -12,6 +12,7 @@ const ProfilePage = () => {
   const profileImageInput = useRef();
   const backgroundImageInput = useRef();
   const { username } = useParams();
+  // const { profileRefreshKey } = useOutletContext()
 
   useEffect(() => {
   const fetchProfileAndPosts = async () => {

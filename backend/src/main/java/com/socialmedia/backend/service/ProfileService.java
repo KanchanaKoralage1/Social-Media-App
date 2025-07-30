@@ -52,6 +52,9 @@ public class ProfileService {
         dto.setBio(user.getBio());
         dto.setWebsite(user.getWebsite());
         dto.setLocation(user.getLocation());
+        dto.setFollowersCount(user.getFollowersCount()); // Added
+        dto.setFollowingCount(user.getFollowingCount()); // Added
+        dto.setPostsCount(user.getPostsCount());        
         return dto;
     }
 
