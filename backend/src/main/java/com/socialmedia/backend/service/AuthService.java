@@ -17,63 +17,65 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtTokenUtil jwtTokenUtil;
-    private final AuthenticationManager authenticationManager;
-    private final CustomUserDetailsService userDetailsService;
+  private final UserRepository userRepository;
+  private final PasswordEncoder passwordEncoder;
+  private final JwtTokenUtil jwtTokenUtil;
+  private final AuthenticationManager authenticationManager;
+  private final CustomUserDetailsService userDetailsService;
 
-    public AuthResponse signup(SignupRequest request) {
-        // Check if user already exists
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
-        }
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
-        }
+  public AuthResponse signup(SignupRequest request) {
+      // Check if user already exists
+      if (userRepository.existsByUsername(request.getUsername())) {
+          throw new RuntimeException("Username already exists");
+      }
+      if (userRepository.existsByEmail(request.getEmail())) {
+          throw new RuntimeException("Email already exists");
+      }
 
-        // Create new user
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setFullName(request.getFullName());
+      // Create new user
+      User user = new User();
+      user.setUsername(request.getUsername());
+      user.setEmail(request.getEmail());
+      user.setPassword(passwordEncoder.encode(request.getPassword()));
+      user.setFullName(request.getFullName());
 
-        userRepository.save(user);
+      userRepository.save(user);
 
-        // Generate JWT token
-        UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
-        String token = jwtTokenUtil.generateToken(userDetails);
+      // Generate JWT token
+      UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
+      String token = jwtTokenUtil.generateToken(userDetails);
 
-        // Fetch the saved user to get the email (in case of any DB changes)
-        User savedUser = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found after signup"));
+      // Fetch the saved user to get the email and other details (like profileImage if set by default)
+      User savedUser = userRepository.findByUsername(request.getUsername())
+              .orElseThrow(() -> new RuntimeException("User not found after signup"));
 
-        // Create response
-        AuthResponse response = new AuthResponse();
-        response.setToken(token);
-        response.setUsername(savedUser.getUsername());
-        response.setEmail(savedUser.getEmail());
+      // Create response
+      AuthResponse response = new AuthResponse();
+      response.setToken(token);
+      response.setUsername(savedUser.getUsername());
+      response.setEmail(savedUser.getEmail());
+      response.setFullName(savedUser.getFullName()); // Populate fullName
+      response.setProfileImage(savedUser.getProfileImage()); // Populate profileImage
+      return response;
+  }
 
-        return response;
-    }
+  public AuthResponse login(LoginRequest request) {
+      authenticationManager.authenticate(
+              new UsernamePasswordAuthenticationToken(request.getUsernameOrEmail(), request.getPassword()));
 
-    public AuthResponse login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsernameOrEmail(), request.getPassword()));
+      UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsernameOrEmail());
+      String token = jwtTokenUtil.generateToken(userDetails);
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsernameOrEmail());
-        String token = jwtTokenUtil.generateToken(userDetails);
+      // Fetch user from DB to get email, fullName, profileImage
+      User user = userRepository.findByUsername(userDetails.getUsername())
+              .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Fetch user from DB to get email
-        User user = userRepository.findByUsername(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        AuthResponse response = new AuthResponse();
-        response.setToken(token);
-        response.setUsername(user.getUsername());
-        response.setEmail(user.getEmail());
-
-        return response;
-    }
+      AuthResponse response = new AuthResponse();
+      response.setToken(token);
+      response.setUsername(user.getUsername());
+      response.setEmail(user.getEmail());
+      response.setFullName(user.getFullName()); // Populate fullName
+      response.setProfileImage(user.getProfileImage()); // Populate profileImage
+      return response;
+  }
 }
