@@ -20,6 +20,7 @@ public class PostService {
     private final CustomUserDetailsService customUserDetailsService;
     private final FileUploadService fileUploadService;
     private final SavedPostRepository savedPostRepository;
+    private final NotificationService notificationService; 
 
     public PostResponse createPost(String token, String content, MultipartFile[] images) {
         User user = customUserDetailsService.getUserFromToken(token);
@@ -139,12 +140,14 @@ public class PostService {
 
         if (exists) {
             likeRepository.deleteByUserIdAndPostId(user.getId(), postId);
+            notificationService.createNotification(user, post.getUser(), post, "LIKE"); // Notify on unlike
             return false;
         } else {
             Like like = new Like();
             like.setUser(user);
             like.setPost(post);
             likeRepository.save(like);
+            notificationService.createNotification(user, post.getUser(), post, "LIKE");
             return true;
         }
     }
@@ -165,6 +168,7 @@ public class PostService {
         }
 
         Comment savedComment = commentRepository.save(comment);
+        notificationService.createNotification(user, post.getUser(), post, "COMMENT"); 
         return convertToCommentDTO(savedComment);
     }
 
@@ -300,6 +304,7 @@ public class PostService {
         shared.setImageUrl("");
         shared.setOriginalPost(root); // always point to root
         postRepository.save(shared);
+        notificationService.createNotification(user, root.getUser(), root, "SHARE");
 
     }
 
