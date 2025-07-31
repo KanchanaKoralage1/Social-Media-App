@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import lombok.EqualsAndHashCode; 
+import lombok.EqualsAndHashCode;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -55,11 +55,8 @@ public class User {
     private boolean enabled = true;
 
     @ManyToMany
-    @JoinTable(
-        name = "user_following", // Changed to match standard naming
-        joinColumns = @JoinColumn(name = "follower_id"),
-        inverseJoinColumns = @JoinColumn(name = "following_id")
-    )
+    @JoinTable(name = "user_following", // Changed to match standard naming
+            joinColumns = @JoinColumn(name = "follower_id"), inverseJoinColumns = @JoinColumn(name = "following_id"))
     @EqualsAndHashCode.Exclude
     private Set<User> following = new HashSet<>();
 
@@ -108,4 +105,3 @@ public class User {
         return posts != null ? posts.size() : 0;
     }
 }
-

@@ -304,33 +304,33 @@ public class PostService {
     }
 
     @Transactional
-public boolean toggleSave(Long postId, String token) {
-    User user = customUserDetailsService.getUserFromToken(token);
-    Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new RuntimeException("Post not found"));
+    public boolean toggleSave(Long postId, String token) {
+        User user = customUserDetailsService.getUserFromToken(token);
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
 
-    boolean exists = savedPostRepository.existsByUserIdAndPostId(user.getId(), postId);
-    if (exists) {
-        System.out.println("Deleting SavedPost for userId: " + user.getId() + ", postId: " + postId);
-        savedPostRepository.deleteByUserIdAndPostId(user.getId(), postId);
-        System.out.println("Deleted SavedPost successfully");
-        return false;
-    } else {
-        SavedPost saved = new SavedPost();
-        saved.setUser(user);
-        saved.setPost(post);
-        savedPostRepository.save(saved);
-        System.out.println("Saved post for userId: " + user.getId() + ", postId: " + postId);
-        return true;
+        boolean exists = savedPostRepository.existsByUserIdAndPostId(user.getId(), postId);
+        if (exists) {
+            System.out.println("Deleting SavedPost for userId: " + user.getId() + ", postId: " + postId);
+            savedPostRepository.deleteByUserIdAndPostId(user.getId(), postId);
+            System.out.println("Deleted SavedPost successfully");
+            return false;
+        } else {
+            SavedPost saved = new SavedPost();
+            saved.setUser(user);
+            saved.setPost(post);
+            savedPostRepository.save(saved);
+            System.out.println("Saved post for userId: " + user.getId() + ", postId: " + postId);
+            return true;
+        }
     }
-}
 
     public List<PostResponse> getSavedPosts(String token) {
         User user = customUserDetailsService.getUserFromToken(token);
         List<SavedPost> saved = savedPostRepository.findByUserId(user.getId());
         return saved.stream()
-            .map(sp -> convertToDTO(sp.getPost(), token))
-            .collect(Collectors.toList());
+                .map(sp -> convertToDTO(sp.getPost(), token))
+                .collect(Collectors.toList());
     }
 
 }

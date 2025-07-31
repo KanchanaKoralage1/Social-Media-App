@@ -165,7 +165,6 @@ public class PostController {
         }
     }
 
-
     @PostMapping("/{postId}/save")
     public ResponseEntity<?> savePost(
             @PathVariable Long postId,

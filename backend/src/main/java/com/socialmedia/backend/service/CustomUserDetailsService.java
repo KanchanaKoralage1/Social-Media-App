@@ -29,7 +29,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "User not found with username or email: " + usernameOrEmail));
 
-                        System.out.println("Loaded user: " + user.getUsername());
+        System.out.println("Loaded user: " + user.getUsername());
         // Add default ROLE_USER authority
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_USER"));

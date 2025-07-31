@@ -12,9 +12,9 @@ public class ProfileResponse {
     private String bio;
     private String website;
     private String location;
-    private int followersCount; 
-    private int followingCount; 
-    private int postsCount; 
+    private int followersCount;
+    private int followingCount;
+    private int postsCount;
     private boolean isFollowing;
-    
+
 }

@@ -27,64 +27,64 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-  private final JwtAuthenticationFilter jwtAuthFilter;
-  private final CustomUserDetailsService customUserDetailsService;
+    private final JwtAuthenticationFilter jwtAuthFilter;
+    private final CustomUserDetailsService customUserDetailsService;
 
-  @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-      http
-              .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-              .csrf(csrf -> csrf.disable())
-              .authorizeHttpRequests(auth -> auth
-                      .requestMatchers(
-                              "/uploads/**", // Allow public access to uploads
-                              "/api/auth/signup",
-                              "/api/auth/login",
-                              "/api/auth/oauth2/**",
-                              "/oauth2/**",
-                              "/login/oauth2/**")
-                      .permitAll()
-                      .requestMatchers("/api/posts/**").authenticated() 
-                      .requestMatchers("/api/profile/**").authenticated()
-                      .requestMatchers("/api/users/**").hasRole("USER")
-                      .anyRequest().authenticated())
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/uploads/**", // Allow public access to uploads
+                                "/api/auth/signup",
+                                "/api/auth/login",
+                                "/api/auth/oauth2/**",
+                                "/oauth2/**",
+                                "/login/oauth2/**")
+                        .permitAll()
+                        .requestMatchers("/api/posts/**").authenticated()
+                        .requestMatchers("/api/profile/**").authenticated()
+                        .requestMatchers("/api/users/**").hasRole("USER")
+                        .anyRequest().authenticated())
 
-              .sessionManagement(session -> session
-                      .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-              .authenticationProvider(authenticationProvider())
-              .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-      return http.build();
-  }
+        return http.build();
+    }
 
-  @Bean
-  public AuthenticationProvider authenticationProvider() {
-      DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-      authProvider.setUserDetailsService(customUserDetailsService);
-      authProvider.setPasswordEncoder(passwordEncoder());
-      return authProvider;
-  }
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(customUserDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
 
-  @Bean
-  public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-      return config.getAuthenticationManager();
-  }
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
 
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-      return new BCryptPasswordEncoder();
-  }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-  @Bean
-  public CorsConfigurationSource corsConfigurationSource() {
-      CorsConfiguration configuration = new CorsConfiguration();
-      configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
-      configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-      configuration.setAllowedHeaders(Arrays.asList("*"));
-      configuration.setAllowCredentials(true);
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
 
-      UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-      source.registerCorsConfiguration("/**", configuration);
-      return source;
-  }
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 }
