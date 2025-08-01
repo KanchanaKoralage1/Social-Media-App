@@ -1,8 +1,7 @@
-"use client"
-
 import { useEffect, useState, useRef } from "react"
 import { useParams,useNavigate } from "react-router-dom"
 import PostCard from "../middle/PostCard"
+import MessageModal from "./MessageModal"
 
 const ProfilePage = () => {
   const [profile, setProfile] = useState(null)
@@ -18,6 +17,7 @@ const ProfilePage = () => {
   const [currentLoggedInUser, setCurrentLoggedInUser] = useState(null)
   const [isFollowing, setIsFollowing] = useState(false)
   const [error, setError] = useState(null);
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
 
   // Load current logged-in user from localStorage
   useEffect(() => {
@@ -454,6 +454,10 @@ const ProfilePage = () => {
     )
   }
 
+  const handleMessage = () => {
+    setIsMessageModalOpen(true);
+  };
+
   if (!profile) {
     return <div className="text-center mt-10 text-gray-500">Loading profile...</div>
   }
@@ -500,6 +504,7 @@ const ProfilePage = () => {
               Edit Profile
             </button>
           ) : (
+            <>
             <button
               className={`px-4 py-2 rounded font-semibold transition ${
                 isFollowing ? "bg-gray-300 text-gray-800 hover:bg-gray-400" : "bg-blue-600 text-white hover:bg-blue-700"
@@ -508,6 +513,12 @@ const ProfilePage = () => {
             >
               {isFollowing ? "Following" : "Follow"}
             </button>
+
+            <button className="px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700" onClick={handleMessage}>
+              Message
+            </button>
+            </>
+            
           )}
         </div>
         <div className="mt-4 text-gray-700">{profile.bio}</div>
@@ -607,6 +618,15 @@ const ProfilePage = () => {
             </button>
           </form>
         </div>
+      )}
+
+      {isMessageModalOpen && (
+        <MessageModal
+          isOpen={isMessageModalOpen}
+          onClose={() => setIsMessageModalOpen(false)}
+          recipientUsername={profile.username}
+          currentUser={currentLoggedInUser}
+        />
       )}
 
       <div className="mt-8 px-6 pb-6">
