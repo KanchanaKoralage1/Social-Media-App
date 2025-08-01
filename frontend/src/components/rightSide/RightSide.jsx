@@ -9,25 +9,42 @@ const newsList = [
 
 const RightSide = ({ onFollowChange }) => {
   const [showSidebar, setShowSidebar] = useState(false);
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(false); //useState(localStorage.getItem("theme") === "dark");
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [following, setFollowing] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch users and following list
   useEffect(() => {
     const fetchUsers = async () => {
       setLoadingUsers(true);
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:8080/api/users", {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        if (!token) {
+          console.error("No token found, cannot fetch users");
+          setUsers([]);
+          setLoadingUsers(false);
+          return;
+        }
+        const url = searchQuery
+          ? `http://localhost:8080/api/users/search?query=${encodeURIComponent(
+              searchQuery
+            )}`
+          : "http://localhost:8080/api/users";
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
           const data = await res.json();
           setUsers(data);
+        } else {
+          console.error(
+            `Failed to fetch users: ${res.status} ${res.statusText}`
+          );
+          setUsers([]);
         }
       } catch (err) {
+        console.error("Error fetching users:", err);
         setUsers([]);
       }
       setLoadingUsers(false);
@@ -60,9 +77,13 @@ const RightSide = ({ onFollowChange }) => {
 
     fetchUsers();
     fetchFollowing();
-  }, []);
+  }, [searchQuery]);
 
   const handleThemeToggle = () => setDark((prev) => !prev);
+
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+  };
 
   // When following changes, notify parent (profile page) if callback provided
   useEffect(() => {
@@ -105,6 +126,8 @@ const RightSide = ({ onFollowChange }) => {
               loadingUsers={loadingUsers}
               following={following}
               setFollowing={setFollowing}
+              searchQuery={searchQuery}
+              handleSearch={handleSearch}
             />
           </div>
         </div>
@@ -121,6 +144,8 @@ const RightSide = ({ onFollowChange }) => {
             loadingUsers={loadingUsers}
             following={following}
             setFollowing={setFollowing}
+            searchQuery={searchQuery}
+            handleSearch={handleSearch}
           />
         </div>
       </div>
@@ -136,6 +161,8 @@ const RightSideContent = ({
   loadingUsers,
   following,
   setFollowing,
+  searchQuery,
+  handleSearch,
 }) => {
   const handleFollow = async (username) => {
     const token = localStorage.getItem("token");
@@ -146,19 +173,24 @@ const RightSideContent = ({
     }
     try {
       console.log("Following user:", username, "with TOKEN:", token);
-      const res = await fetch(`http://localhost:8080/api/users/${username}/follow`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const res = await fetch(
+        `http://localhost:8080/api/users/${username}/follow`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
       if (res.ok) {
         setFollowing((prev) => [...prev, username]);
         alert(`Successfully followed ${username}`);
       } else {
         const errorText = await res.text();
-        console.error(`Failed to follow user: ${res.status} ${res.statusText} - ${errorText}`);
+        console.error(
+          `Failed to follow user: ${res.status} ${res.statusText} - ${errorText}`
+        );
         alert(`Failed to follow ${username}: ${errorText || res.statusText}`);
       }
     } catch (err) {
@@ -176,19 +208,24 @@ const RightSideContent = ({
     }
     try {
       console.log("Unfollowing user:", username, "with TOKEN:", token);
-      const res = await fetch(`http://localhost:8080/api/users/${username}/unfollow`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const res = await fetch(
+        `http://localhost:8080/api/users/${username}/unfollow`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
       if (res.ok) {
         setFollowing((prev) => prev.filter((u) => u !== username));
         alert(`Successfully unfollowed ${username}`);
       } else {
         const errorText = await res.text();
-        console.error(`Failed to unfollow user: ${res.status} ${res.statusText} - ${errorText}`);
+        console.error(
+          `Failed to unfollow user: ${res.status} ${res.statusText} - ${errorText}`
+        );
         alert(`Failed to unfollow ${username}: ${errorText || res.statusText}`);
       }
     } catch (err) {
@@ -204,6 +241,8 @@ const RightSideContent = ({
         <input
           type="text"
           placeholder="Search..."
+          value={searchQuery}
+          onChange={handleSearch}
           className="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
         />
         <button
@@ -278,7 +317,7 @@ const RightSideContent = ({
         </ul>
       </div>
       {/* 4. Suggestions */}
-     <div>
+      <div className="flex-1 overflow-y-auto max-h-100">
         <h3 className="font-bold mb-2 text-gray-700 dark:text-gray-200">
           Who to follow
         </h3>
@@ -300,12 +339,14 @@ const RightSideContent = ({
                     alt="Profile"
                     className="w-8 h-8 rounded-full object-cover border"
                   />
-                <div>
-                  <div className="font-semibold">
-                    {user.fullName || user.username}
+                  <div>
+                    <div className="font-semibold">
+                      {user.fullName || user.username}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      @{user.username}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500">@{user.username}</div>
-                </div>
                 </Link>
                 <button
                   className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition"

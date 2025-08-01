@@ -46,6 +46,29 @@ public class UserController {
         }
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<?> searchUsers(@RequestParam String query, @RequestHeader("Authorization") String token) {
+        try {
+            String currentUsername = jwtTokenUtil.getUsernameFromToken(token.replace("Bearer ", ""));
+            System.out.println("Searching users for query: " + query + ", by user: " + currentUsername);
+            List<UserSuggestionDTO> users = userRepository.searchUsers(query).stream()
+                    .filter(u -> !u.getUsername().equals(currentUsername))
+                    .map(u -> {
+                        UserSuggestionDTO dto = new UserSuggestionDTO();
+                        dto.setUsername(u.getUsername());
+                        dto.setFullName(u.getFullName());
+                        dto.setProfileImage(u.getProfileImage());
+                        dto.setVerified(u.getVerified());
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            System.out.println("Error searching users: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error searching users: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/{username}/follow")
     @Transactional
     public ResponseEntity<?> followUser(@PathVariable String username, @RequestHeader("Authorization") String token) {

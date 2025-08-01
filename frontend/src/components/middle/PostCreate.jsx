@@ -24,15 +24,15 @@ const PostCreate = ({ onPostCreated }) => {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    const newImages = files.map(file => ({
+    const newImages = files.map((file) => ({
       file,
       url: URL.createObjectURL(file),
     }));
-    setImages(prev => [...prev, ...newImages]);
+    setImages((prev) => [...prev, ...newImages]);
   };
 
   const handleRemoveImage = (idx) => {
-    setImages(prev => {
+    setImages((prev) => {
       URL.revokeObjectURL(prev[idx].url);
       return prev.filter((_, i) => i !== idx);
     });
@@ -43,7 +43,7 @@ const PostCreate = ({ onPostCreated }) => {
     const token = localStorage.getItem("token");
     const formData = new FormData();
     formData.append("content", caption);
-    images.forEach(img => formData.append("images", img.file));
+    images.forEach((img) => formData.append("images", img.file));
 
     await fetch("http://localhost:8080/api/posts", {
       method: "POST",
@@ -74,16 +74,14 @@ const PostCreate = ({ onPostCreated }) => {
         <span className="font-semibold text-gray-800">
           {fullName ? fullName : username}
         </span>
-        {fullName && (
-          <span className="text-gray-500 ml-2">@{username}</span>
-        )}
+        {fullName && <span className="text-gray-500 ml-2">@{username}</span>}
       </div>
       <textarea
         className="w-full border rounded p-2 resize-none focus:ring-2 focus:ring-blue-400"
         rows={3}
         placeholder="What's on your mind?"
         value={caption}
-        onChange={e => setCaption(e.target.value)}
+        onChange={(e) => setCaption(e.target.value)}
       />
       {/* Image preview grid */}
       {images.length > 0 && (
@@ -107,7 +105,9 @@ const PostCreate = ({ onPostCreated }) => {
               {/* Overlay for extra images */}
               {idx === 3 && extraCount > 0 && (
                 <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center rounded">
-                  <span className="text-white text-xl font-bold">+{extraCount}</span>
+                  <span className="text-white text-xl font-bold">
+                    +{extraCount}
+                  </span>
                 </div>
               )}
             </div>
@@ -132,7 +132,9 @@ const PostCreate = ({ onPostCreated }) => {
           className="hidden"
           onChange={handleImageChange}
         />
-        <span className="text-sm text-gray-500">{images.length} image{images.length !== 1 ? "s" : ""} selected</span>
+        <span className="text-sm text-gray-500">
+          {images.length} image{images.length !== 1 ? "s" : ""} selected
+        </span>
       </div>
       {/* Submit button */}
       <button

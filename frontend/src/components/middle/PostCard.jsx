@@ -36,7 +36,7 @@ const PostCard = ({
     originalContent,
     originalImages,
     originalPostId,
-    isSaved
+    isSaved,
   } = post;
   const isOwner = currentUser && user && currentUser.username === user.username;
   const isSharedPost = !!originalUser;
@@ -54,7 +54,7 @@ const PostCard = ({
   const fileInputRef = useRef();
   const navigate = useNavigate();
 
-  const [isPostSaved, setIsPostSaved] = useState(isSaved)
+  const [isPostSaved, setIsPostSaved] = useState(isSaved);
 
   useEffect(() => {
     setEditValue(caption);
@@ -62,10 +62,9 @@ const PostCard = ({
     setNewImages([]);
   }, [caption, images, editing]);
 
-
   useEffect(() => {
-    setIsPostSaved(isSaved)
-  }, [isSaved])
+    setIsPostSaved(isSaved);
+  }, [isSaved]);
 
   const handleRemoveEditImage = (idx) => {
     setEditImages((prev) => prev.filter((_, i) => i !== idx));
@@ -115,26 +114,29 @@ const PostCard = ({
 
   const profileImgSrc = user?.profileImage || "/default-profile.png";
 
-   const handleToggleSave = async () => {
-    const token = localStorage.getItem("token")
-    if (!token) return
+  const handleToggleSave = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:8080/api/posts/${post.id}/save`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await fetch(
+        `http://localhost:8080/api/posts/${post.id}/save`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (res.ok) {
-        const data = await res.json()
-        setIsPostSaved(data.saved) // Update local state based on backend response
-        if (onSave) onSave(post, data.saved) // Pass post and new saved status to parent
+        const data = await res.json();
+        setIsPostSaved(data.saved); // Update local state based on backend response
+        if (onSave) onSave(post, data.saved); // Pass post and new saved status to parent
       } else {
-        alert("Failed to toggle save status.")
+        alert("Failed to toggle save status.");
       }
     } catch (err) {
-      alert("Network error while toggling save status.")
+      alert("Network error while toggling save status.");
     }
-  }
+  };
 
   return (
     <div className="bg-white rounded shadow p-4 mb-6 max-w-lg mx-auto">
@@ -215,64 +217,62 @@ const PostCard = ({
           {!editing && (
             <div className="text-gray-800 mb-3">{caption ?? ""}</div>
           )}
-        <div
-          className="border p-3 rounded bg-gray-50 mb-3 cursor-pointer hover:bg-gray-100 transition"
-          onClick={handlePostClick}
-          style={{ pointerEvents: "auto" }} // Ensure clicks are not blocked
-          
-        >
-          
           <div
-            className="flex items-center gap-3 mb-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log(
-                "Navigating to original profile:",
-                originalUser?.username
-              ); // Debug log
-              originalUser?.username &&
-                navigate(`/profile/${originalUser.username}`);
-            }}
+            className="border p-3 rounded bg-gray-50 mb-3 cursor-pointer hover:bg-gray-100 transition"
+            onClick={handlePostClick}
+            style={{ pointerEvents: "auto" }} // Ensure clicks are not blocked
           >
-            <img
-              src={originalUser?.profileImage || "/default-profile.png"}
-              alt="Original Profile"
-              className="w-8 h-8 rounded-full object-cover border"
-            />
-            <div className="font-semibold text-gray-800">
-              {originalUser?.fullName || originalUser?.username}
+            <div
+              className="flex items-center gap-3 mb-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log(
+                  "Navigating to original profile:",
+                  originalUser?.username
+                ); // Debug log
+                originalUser?.username &&
+                  navigate(`/profile/${originalUser.username}`);
+              }}
+            >
+              <img
+                src={originalUser?.profileImage || "/default-profile.png"}
+                alt="Original Profile"
+                className="w-8 h-8 rounded-full object-cover border"
+              />
+              <div className="font-semibold text-gray-800">
+                {originalUser?.fullName || originalUser?.username}
+              </div>
             </div>
-          </div>
-          <div className="text-gray-800 mb-3">{originalContent ?? ""}</div>
-          {originalImages && originalImages.length > 0 && (
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              {previewImages.map((img, idx) => (
-                <div key={idx} className="relative">
-                  <img
-                    src={typeof img === "string" ? img : img.url}
-                    alt={`post-img-${idx}`}
-                    className="w-full h-40 object-cover rounded"
-                    style={{ pointerEvents: "none" }} // Prevent image clicks from interfering
-                  />
-                  {idx === 3 && extraCount > 0 && (
-                    <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center rounded">
-                      <span className="text-white text-xl font-bold">
-                        +{extraCount}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+            <div className="text-gray-800 mb-3">{originalContent ?? ""}</div>
+            {originalImages && originalImages.length > 0 && (
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                {previewImages.map((img, idx) => (
+                  <div key={idx} className="relative">
+                    <img
+                      src={typeof img === "string" ? img : img.url}
+                      alt={`post-img-${idx}`}
+                      className="w-full h-40 object-cover rounded"
+                      style={{ pointerEvents: "none" }} // Prevent image clicks from interfering
+                    />
+                    {idx === 3 && extraCount > 0 && (
+                      <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center rounded">
+                        <span className="text-white text-xl font-bold">
+                          +{extraCount}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
-          <button
-            onClick={() =>
-              originalPostId && navigate(`/post/${originalPostId}`)
-            }
-            disabled={!originalPostId}
-          ></button>
-        </div>
+            <button
+              onClick={() =>
+                originalPostId && navigate(`/post/${originalPostId}`)
+              }
+              disabled={!originalPostId}
+            ></button>
+          </div>
         </>
       )}
 
@@ -424,11 +424,13 @@ const PostCard = ({
 
         <button
           onClick={handleToggleSave} // Highlight: Use the new handler
-          className={`ml-auto ${isPostSaved ? "text-yellow-500" : "hover:text-yellow-500"}`} // Highlight: Conditional styling
+          className={`ml-auto ${
+            isPostSaved ? "text-yellow-500" : "hover:text-yellow-500"
+          }`} // Highlight: Conditional styling
           title={isPostSaved ? "Unsave Post" : "Save Post"} // Highlight: Dynamic title
         >
-  <FiBookmark size={20} />
-</button>
+          <FiBookmark size={20} />
+        </button>
       </div>
 
       {showComments && (
