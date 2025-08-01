@@ -50,14 +50,15 @@ public class ProfileService {
         dto.setUsername(profileUser.getUsername());
         dto.setFullName(profileUser.getFullName());
         dto.setProfileImage(profileUser.getProfileImage());
+        dto.setEmail(profileUser.getEmail());
         dto.setBackgroundImage(profileUser.getBackgroundImage());
         dto.setBio(profileUser.getBio());
         dto.setWebsite(profileUser.getWebsite());
         dto.setLocation(profileUser.getLocation());
-        dto.setFollowersCount(profileUser.getFollowersCount()); // Added
-        dto.setFollowingCount(profileUser.getFollowingCount()); // Added
-        dto.setPostsCount(profileUser.getPostsCount()); // Added
-        dto.setFollowing(currentUser.getFollowing().contains(profileUser)); // Added
+        dto.setFollowersCount(profileUser.getFollowersCount()); 
+        dto.setFollowingCount(profileUser.getFollowingCount()); 
+        dto.setPostsCount(profileUser.getPostsCount()); 
+        dto.setFollowing(currentUser.getFollowing().contains(profileUser)); 
         return dto;
     }
 

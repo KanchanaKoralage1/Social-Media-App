@@ -8,6 +8,7 @@ public class ProfileResponse {
     private String username;
     private String fullName;
     private String profileImage;
+    private String email;
     private String backgroundImage;
     private String bio;
     private String website;

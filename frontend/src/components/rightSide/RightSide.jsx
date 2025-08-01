@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const newsList = [
@@ -9,11 +9,30 @@ const newsList = [
 
 const RightSide = ({ onFollowChange }) => {
   const [showSidebar, setShowSidebar] = useState(false);
-  const [dark, setDark] = useState(false); //useState(localStorage.getItem("theme") === "dark");
+  const [dark, setDark] = useState(localStorage.getItem("theme") === "dark");
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [following, setFollowing] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Apply theme and persist in localStorage
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [dark]);
+
+  // Helper function to construct the full image URL
+  const getFullImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    return imagePath.startsWith("http")
+      ? imagePath
+      : `http://localhost:8080/uploads/${imagePath}`;
+  };
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -36,7 +55,12 @@ const RightSide = ({ onFollowChange }) => {
         });
         if (res.ok) {
           const data = await res.json();
-          setUsers(data);
+          setUsers(
+            data.map((user) => ({
+              ...user,
+              profileImage: getFullImageUrl(user.profileImage), // Construct full URL
+            }))
+          );
         } else {
           console.error(
             `Failed to fetch users: ${res.status} ${res.statusText}`
@@ -245,6 +269,14 @@ const RightSideContent = ({
           onChange={handleSearch}
           className="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
         />
+        {searchQuery && (
+          <button
+            onClick={() => searchQuery("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-300"
+          >
+            ✕
+          </button>
+        )}
         <button
           onClick={handleThemeToggle}
           className="ml-2 p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900 transition"

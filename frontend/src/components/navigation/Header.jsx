@@ -23,12 +23,18 @@ const Header = () => {
   const [dark, setDark] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
 
+  // Helper function to construct the full image URL
+  const getFullImageUrl = (imagePath) => {
+    if (!imagePath) return null
+    return imagePath.startsWith("http") ? imagePath : `http://localhost:8080/uploads/${imagePath}`
+  }
+
   // Get profile image from localStorage or use a default
-  let profileImg = "/default-profile.png";
+  let profileImg = "/default-profile.png"
   try {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user && user.profileImg) {
-      profileImg = user.profileImg;
+    const user = JSON.parse(localStorage.getItem("user"))
+    if (user && user.profileImage) {
+      profileImg = getFullImageUrl(user.profileImage) // Use helper for stored image
     }
   } catch (e) {}
 
