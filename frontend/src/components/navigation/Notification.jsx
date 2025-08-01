@@ -20,7 +20,11 @@ function Notification() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) {
-          console.error("Failed to fetch notifications:", res.status, res.statusText);
+          console.error(
+            "Failed to fetch notifications:",
+            res.status,
+            res.statusText
+          );
           setError("Failed to load notifications");
           return;
         }

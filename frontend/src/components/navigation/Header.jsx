@@ -1,5 +1,15 @@
 import React, { useState } from "react";
-import { FiHome, FiMessageCircle, FiBell, FiSearch, FiMenu, FiSun, FiMoon, FiLogOut, FiX } from "react-icons/fi";
+import {
+  FiHome,
+  FiMessageCircle,
+  FiBell,
+  FiSearch,
+  FiMenu,
+  FiSun,
+  FiMoon,
+  FiLogOut,
+  FiX,
+} from "react-icons/fi";
 
 const menuItems = [
   { name: "Explore", href: "/explore" },
@@ -35,7 +45,9 @@ const Header = () => {
       {/* Mobile Header */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b flex items-center justify-between px-4 py-2 shadow">
         <div className="flex gap-4 items-center">
-          <a href="/home"><FiHome size={22} /></a>
+          <a href="/home">
+            <FiHome size={22} />
+          </a>
           <a href="/profile">
             <img
               src={profileImg}
@@ -43,8 +55,12 @@ const Header = () => {
               className="w-7 h-7 rounded-full object-cover border"
             />
           </a>
-          <a href="/messages"><FiMessageCircle size={22} /></a>
-          <a href="/notifications"><FiBell size={22} /></a>
+          <a href="/messages">
+            <FiMessageCircle size={22} />
+          </a>
+          <a href="/notifications">
+            <FiBell size={22} />
+          </a>
           <button onClick={() => setShowSearch(true)}>
             <FiSearch size={22} />
           </button>
@@ -55,10 +71,13 @@ const Header = () => {
       </header>
       {/* Search Modal */}
       {showSearch && (
-        <div className="fixed inset-0 z-50 bg-opacity-40 flex items-start justify-center pt-24" onClick={() => setShowSearch(false)}>
+        <div
+          className="fixed inset-0 z-50 bg-opacity-40 flex items-start justify-center pt-24"
+          onClick={() => setShowSearch(false)}
+        >
           <div
             className="bg-white w-11/12 max-w-md rounded shadow-lg p-4 flex items-center gap-2"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <input
               type="text"
@@ -74,10 +93,13 @@ const Header = () => {
       )}
       {/* Hamburger Drawer */}
       {menuOpen && (
-        <div className="fixed inset-0 z-50 bg-opacity-40 " onClick={() => setMenuOpen(false)}>
+        <div
+          className="fixed inset-0 z-50 bg-opacity-40 "
+          onClick={() => setMenuOpen(false)}
+        >
           <div
             className="absolute right-0 top-14 h-[calc(100vh-56px)] w-72 bg-white shadow-lg flex flex-col"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Theme Toggle in top right */}
             <div className="flex justify-end p-3">
@@ -86,7 +108,11 @@ const Header = () => {
                 className="p-2 rounded-full bg-gray-100 hover:bg-blue-100 transition"
                 title="Toggle theme"
               >
-                {dark ? <FiSun size={20} color="orange" /> : <FiMoon size={20} />}
+                {dark ? (
+                  <FiSun size={20} color="orange" />
+                ) : (
+                  <FiMoon size={20} />
+                )}
               </button>
             </div>
             {/* Menu Items */}

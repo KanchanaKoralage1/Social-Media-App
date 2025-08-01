@@ -48,7 +48,7 @@ const PostShare = () => {
         comments: data.comments,
         isLiked: data.isLiked,
         shareCount: data.shareCount,
-        originalPostId: data.originalPostId || null, // Fixed mapping
+        originalPostId: data.originalPostId || null,
         originalUser: data.originalUser
           ? {
               username: data.originalUser.username,

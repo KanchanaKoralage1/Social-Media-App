@@ -25,10 +25,14 @@ function MessageModal({ isOpen, onClose, recipientUsername, currentUser }) {
           `http://localhost:8080/api/messages/${recipientUsername}`,
           {
             headers: { Authorization: `Bearer ${token}` },
-          },
+          }
         );
         if (!res.ok) {
-          console.error("Failed to fetch conversation:", res.status, res.statusText);
+          console.error(
+            "Failed to fetch conversation:",
+            res.status,
+            res.statusText
+          );
           setError("Failed to load conversation");
           return;
         }
@@ -48,7 +52,7 @@ function MessageModal({ isOpen, onClose, recipientUsername, currentUser }) {
             content: msg.content,
             createdAt: msg.createdAt,
             isRead: msg.isRead,
-          })),
+          }))
         );
         setError(null);
       } catch (err) {
@@ -80,7 +84,7 @@ function MessageModal({ isOpen, onClose, recipientUsername, currentUser }) {
             "Content-Type": "application/x-www-form-urlencoded",
           },
           body: new URLSearchParams({ content: newMessage }),
-        },
+        }
       );
       if (res.ok) {
         const newMsg = await res.json();
@@ -117,8 +121,13 @@ function MessageModal({ isOpen, onClose, recipientUsername, currentUser }) {
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold">Messages with {recipientUsername}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <h2 className="text-lg font-bold">
+            Messages with {recipientUsername}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
             ✕
           </button>
         </div>

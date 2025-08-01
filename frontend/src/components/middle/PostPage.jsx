@@ -28,11 +28,13 @@ const PostPage = () => {
         },
         caption: data.content,
         images: data.imageUrl
-          ? data.imageUrl.split(",").map((img) =>
-              img.startsWith("http")
-                ? img
-                : `http://localhost:8080/uploads/${img}`
-            )
+          ? data.imageUrl
+              .split(",")
+              .map((img) =>
+                img.startsWith("http")
+                  ? img
+                  : `http://localhost:8080/uploads/${img}`
+              )
           : [],
         createdAt: data.createdAt,
         likes: data.likes,
@@ -52,11 +54,13 @@ const PostPage = () => {
           : null,
         originalContent: data.originalContent,
         originalImages: data.originalImageUrl
-          ? data.originalImageUrl.split(",").map((img) =>
-              img.startsWith("http")
-                ? img
-                : `http://localhost:8080/uploads/${img}`
-            )
+          ? data.originalImageUrl
+              .split(",")
+              .map((img) =>
+                img.startsWith("http")
+                  ? img
+                  : `http://localhost:8080/uploads/${img}`
+              )
           : [],
       });
     };
@@ -65,7 +69,9 @@ const PostPage = () => {
   }, [postId]);
 
   if (!post) {
-    return <div className="text-center mt-10 text-gray-500">Loading post...</div>;
+    return (
+      <div className="text-center mt-10 text-gray-500">Loading post...</div>
+    );
   }
 
   return (

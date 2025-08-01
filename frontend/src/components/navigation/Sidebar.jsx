@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 
 const navLinks = [
@@ -31,25 +30,28 @@ const Sidebar = ({ closeSidebar }) => {
     <div className="flex flex-col justify-between h-full w-64 bg-white border-r shadow-sm">
       <div>
         <div className="p-6 text-2xl font-bold text-blue-600 tracking-wide flex items-center justify-between">
-          Social Media
+          PathFinder
           {closeSidebar && (
-            <button onClick={closeSidebar} className="md:hidden text-gray-500 ml-2">
+            <button
+              onClick={closeSidebar}
+              className="md:hidden text-gray-500 ml-2"
+            >
               ✕
             </button>
           )}
         </div>
         <nav className="mt-8 flex flex-col gap-2">
-  {navLinks.map((link) => (
-    <Link
-      key={link.name}
-      to={link.href}
-      className="px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded transition font-medium"
-      onClick={closeSidebar}
-    >
-      {link.name}
-    </Link>
-  ))}
-</nav>
+          {navLinks.map((link) => (
+            <Link
+              key={link.name}
+              to={link.href}
+              className="px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded transition font-medium"
+              onClick={closeSidebar}
+            >
+              {link.name}
+            </Link>
+          ))}
+        </nav>
       </div>
       <div className="p-6 border-t flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-blue-200 flex items-center justify-center text-lg font-bold text-blue-700">
@@ -57,7 +59,9 @@ const Sidebar = ({ closeSidebar }) => {
         </div>
         <div className="flex-1">
           <div className="font-semibold">{user.username || "User"}</div>
-          <div className="text-xs text-gray-500">{user.email || "user@email.com"}</div>
+          <div className="text-xs text-gray-500">
+            {user.email || "user@email.com"}
+          </div>
         </div>
         <button
           onClick={handleLogout}

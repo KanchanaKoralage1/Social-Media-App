@@ -31,7 +31,7 @@ const ProfilePage = () => {
   }, []);
 
   // Determine if the viewed profile is the current user's profile
-  // Highlight: This condition is crucial for showing Edit vs. Follow button
+  // This condition is crucial for showing Edit vs. Follow button
   const isCurrentUserProfile =
     currentLoggedInUser &&
     profile &&
@@ -40,7 +40,7 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchProfileAndPosts = async () => {
       const token = localStorage.getItem("token");
-      // Highlight: Use username from URL if present, otherwise fetch current user's profile
+      // Use username from URL if present, otherwise fetch current user's profile
       const url = username
         ? `http://localhost:8080/api/profile/${username}`
         : "http://localhost:8080/api/profile";
@@ -122,7 +122,7 @@ const ProfilePage = () => {
                       : "/default-profile.png",
                   }
                 : null,
-              originalContent: post.originalContent, // Corrected: should be post.originalContent
+              originalContent: post.originalContent,
               originalImages: post.originalImageUrl
                 ? post.originalImageUrl
                     .split(",")
@@ -132,7 +132,7 @@ const ProfilePage = () => {
                         : `http://localhost:8080/uploads/${img}`
                     )
                 : [],
-              isSaved: post.isSaved || false, // Added: Support for post saving
+              isSaved: post.isSaved || false,
             }))
           );
         }
@@ -236,7 +236,7 @@ const ProfilePage = () => {
             JSON.stringify({
               ...storedUser,
               profileImage: updated.profileImage,
-              fullName: updated.fullName, // Also update full name
+              fullName: updated.fullName,
             })
           );
         }
@@ -569,7 +569,7 @@ const ProfilePage = () => {
               {profile.fullName || profile.username}
             </div>
           </div>
-          {/* Highlight: Conditional rendering for Edit Profile vs. Follow/Following button */}
+
           {isCurrentUserProfile ? (
             <button
               className="px-4 py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700"
@@ -727,7 +727,6 @@ const ProfilePage = () => {
 
       <div className="mt-8 px-6 pb-6">
         <h2 className="text-xl font-bold mb-4">Posts</h2>{" "}
-        {/* Changed "My Posts" to "Posts" */}
         {posts.length === 0 ? (
           <div className="text-gray-500">No posts yet.</div>
         ) : (
@@ -735,7 +734,7 @@ const ProfilePage = () => {
             <PostCard
               key={post.id}
               post={post}
-              currentUser={currentLoggedInUser} // Pass currentLoggedInUser for proper rendering
+              currentUser={currentLoggedInUser}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onLike={handleLike}

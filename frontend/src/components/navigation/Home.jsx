@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import Layout from "../layout/Layout";
 import PostCreate from "../middle/PostCreate";
 import PostCard from "../middle/PostCard";
 
@@ -34,11 +33,13 @@ function Home() {
           },
           caption: post.content,
           images: post.imageUrl
-            ? post.imageUrl.split(",").map((img) =>
-                img.startsWith("http")
-                  ? img
-                  : `http://localhost:8080/uploads/${img}`
-              )
+            ? post.imageUrl
+                .split(",")
+                .map((img) =>
+                  img.startsWith("http")
+                    ? img
+                    : `http://localhost:8080/uploads/${img}`
+                )
             : [],
           createdAt: post.createdAt,
           likes: post.likes,
@@ -59,11 +60,13 @@ function Home() {
             : null,
           originalContent: post.originalContent,
           originalImages: post.originalImageUrl
-            ? post.originalImageUrl.split(",").map((img) =>
-                img.startsWith("http")
-                  ? img
-                  : `http://localhost:8080/uploads/${img}`
-              )
+            ? post.originalImageUrl
+                .split(",")
+                .map((img) =>
+                  img.startsWith("http")
+                    ? img
+                    : `http://localhost:8080/uploads/${img}`
+                )
             : [],
         }))
       );
@@ -86,7 +89,12 @@ function Home() {
     fetchPosts();
   };
 
-  const handleEdit = async (post, updatedContent, keptImages, newImageFiles) => {
+  const handleEdit = async (
+    post,
+    updatedContent,
+    keptImages,
+    newImageFiles
+  ) => {
     const token = localStorage.getItem("token");
     const formData = new FormData();
     formData.append("content", updatedContent);

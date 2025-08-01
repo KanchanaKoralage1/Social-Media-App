@@ -1,47 +1,47 @@
-"use client"
-
-import { useEffect, useState } from "react"
-import PostCard from "../middle/PostCard"
+import { useEffect, useState } from "react";
+import PostCard from "../middle/PostCard";
 
 function Saved() {
-  const [posts, setPosts] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Highlight: Get current user for PostCard's isOwner logic
-  let currentUser = {}
+  let currentUser = {};
   try {
-    currentUser = JSON.parse(localStorage.getItem("user")) || {}
+    currentUser = JSON.parse(localStorage.getItem("user")) || {};
   } catch (e) {}
 
   const fetchSaved = async () => {
-    setLoading(true)
-    const token = localStorage.getItem("token")
+    setLoading(true);
+    const token = localStorage.getItem("token");
     if (!token) {
-      setLoading(false)
-      return
+      setLoading(false);
+      return;
     }
     try {
       const res = await fetch("http://localhost:8080/api/posts/saved", {
         headers: { Authorization: `Bearer ${token}` },
-      })
+      });
       if (res.ok) {
-        const data = await res.json()
-        // Map backend fields to what PostCard expects, and fix image URLs
+        const data = await res.json();
+
         const mapImages = (imgStr) =>
           imgStr
             ? imgStr
                 .split(",")
                 .filter((url) => url.trim() !== "")
-                .map((url) => (url.startsWith("http") ? url : `http://localhost:8080/uploads/${url.trim()}`))
-            : []
+                .map((url) =>
+                  url.startsWith("http")
+                    ? url
+                    : `http://localhost:8080/uploads/${url.trim()}`
+                )
+            : [];
         const mapped = data.map((post) => ({
           ...post,
           caption: post.content,
           images: mapImages(post.imageUrl),
           originalImages: mapImages(post.originalImageUrl),
-          isSaved: true, // Highlight: Explicitly set isSaved to true for posts in this section
+          isSaved: true,
           user: {
-            // Highlight: Ensure user object is correctly mapped for PostCard
             username: post.user?.username,
             fullName: post.user?.fullName,
             profileImage: post.user?.profileImage
@@ -61,36 +61,36 @@ function Saved() {
                   : "/default-profile.png",
               }
             : null,
-        }))
-        setPosts(mapped)
+        }));
+        setPosts(mapped);
       } else {
-        setPosts([])
+        setPosts([]);
       }
     } catch (error) {
-      console.error("Error fetching saved posts:", error)
-      setPosts([])
+      console.error("Error fetching saved posts:", error);
+      setPosts([]);
     }
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    fetchSaved()
-  }, [])
+    fetchSaved();
+  }, []);
 
-  // Highlight: Handle onSave callback from PostCard
   const handlePostCardSave = (postToUpdate, isNowSaved) => {
     if (!isNowSaved) {
-      // If the post is now unsaved, remove it from the list
-      setPosts((prev) => prev.filter((p) => p.id !== postToUpdate.id))
+      setPosts((prev) => prev.filter((p) => p.id !== postToUpdate.id));
     } else {
-      // If it's saved, we might need to re-fetch or add it if it wasn't there (less common for 'Saved' page)
-      // For simplicity, if it's saved, we assume it's already in the list or will be on next full fetch.
-      // If you want to immediately add it, you'd need the full post object.
-      fetchSaved() // Re-fetch all saved posts to ensure consistency
+      fetchSaved();
     }
-  }
+  };
 
-  if (loading) return <div className="text-center mt-10 text-gray-500">Loading saved posts...</div>
+  if (loading)
+    return (
+      <div className="text-center mt-10 text-gray-500">
+        Loading saved posts...
+      </div>
+    );
 
   return (
     <div>
@@ -102,14 +102,13 @@ function Saved() {
           <PostCard
             key={post.id}
             post={post}
-            currentUser={currentUser} // Highlight: Pass currentUser for proper rendering
-            onSave={handlePostCardSave} // Highlight: Pass the new handler
-            // Other handlers (onEdit, onDelete, onLike, onShare) might also be needed if you want full functionality on saved posts
+            currentUser={currentUser}
+            onSave={handlePostCardSave}
           />
         ))
       )}
     </div>
-  )
+  );
 }
 
-export default Saved
+export default Saved;

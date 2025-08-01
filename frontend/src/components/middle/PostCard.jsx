@@ -423,11 +423,11 @@ const PostCard = ({
         </button>
 
         <button
-          onClick={handleToggleSave} // Highlight: Use the new handler
+          onClick={handleToggleSave}
           className={`ml-auto ${
             isPostSaved ? "text-yellow-500" : "hover:text-yellow-500"
-          }`} // Highlight: Conditional styling
-          title={isPostSaved ? "Unsave Post" : "Save Post"} // Highlight: Dynamic title
+          }`}
+          title={isPostSaved ? "Unsave Post" : "Save Post"}
         >
           <FiBookmark size={20} />
         </button>

@@ -5,7 +5,6 @@ function Homepage() {
     <>
       <h1>Home content here</h1>
       <PostCreate />
-      {/* Add your middle section content here */}
     </>
   );
 }
