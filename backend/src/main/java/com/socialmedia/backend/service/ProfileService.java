@@ -30,8 +30,12 @@ public class ProfileService {
             user.setFullName(request.getFullName());
         if (request.getBio() != null)
             user.setBio(request.getBio());
-        if (request.getWebsite() != null)
-            user.setWebsite(request.getWebsite());
+
+        if (request.getWorkAt() != null)
+            user.setWorkAt(request.getWorkAt());
+
+        if (request.getStudiedAt() != null)
+            user.setStudiedAt(request.getStudiedAt());
         if (request.getLocation() != null)
             user.setLocation(request.getLocation());
         if (request.getProfileImage() != null)
@@ -53,12 +57,13 @@ public class ProfileService {
         dto.setEmail(profileUser.getEmail());
         dto.setBackgroundImage(profileUser.getBackgroundImage());
         dto.setBio(profileUser.getBio());
-        dto.setWebsite(profileUser.getWebsite());
+        dto.setWorkAt(profileUser.getWorkAt());
+        dto.setStudiedAt(profileUser.getStudiedAt());
         dto.setLocation(profileUser.getLocation());
-        dto.setFollowersCount(profileUser.getFollowersCount()); 
-        dto.setFollowingCount(profileUser.getFollowingCount()); 
-        dto.setPostsCount(profileUser.getPostsCount()); 
-        dto.setFollowing(currentUser.getFollowing().contains(profileUser)); 
+        dto.setFollowersCount(profileUser.getFollowersCount());
+        dto.setFollowingCount(profileUser.getFollowingCount());
+        dto.setPostsCount(profileUser.getPostsCount());
+        dto.setFollowing(currentUser.getFollowing().contains(profileUser));
         return dto;
     }
 

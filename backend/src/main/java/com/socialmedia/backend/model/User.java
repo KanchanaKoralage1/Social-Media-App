@@ -34,7 +34,9 @@ public class User {
 
     private String location;
 
-    private String website;
+    private String workAt;
+
+    private String studiedAt;
 
     private String profileImage;
 

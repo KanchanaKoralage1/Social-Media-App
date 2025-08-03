@@ -186,7 +186,8 @@ const ProfilePage = () => {
     const formData = new FormData();
     formData.append("fullName", form.fullName);
     formData.append("bio", form.bio);
-    formData.append("website", form.website);
+    formData.append("workAt", form.workAt);
+    formData.append("studiedAt", form.studiedAt);
     formData.append("location", form.location);
     if (profileImageFile) formData.append("profileImage", profileImageFile);
     if (backgroundImageFile)
@@ -487,11 +488,6 @@ const ProfilePage = () => {
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                   {profile.fullName || profile.username}
                 </h1>
-                {profile.fullName && (
-                  <span className="text-lg text-gray-500 dark:text-gray-400">
-                    @{profile.username}
-                  </span>
-                )}
               </div>
 
               {profile.bio && (
@@ -502,7 +498,7 @@ const ProfilePage = () => {
 
               <div className="flex flex-wrap gap-4 text-gray-600 dark:text-gray-400 mb-4">
                 {profile.location && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     <svg
                       className="w-4 h-4"
                       fill="none"
@@ -525,29 +521,39 @@ const ProfilePage = () => {
                     <span>{profile.location}</span>
                   </div>
                 )}
-                {profile.website && (
-                  <div className="flex items-center gap-1">
+
+                {profile.workAt && (
+                  <div className="flex items-center gap-2">
                     <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="bi bi-briefcase-fill"
+                      viewBox="0 0 16 16"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                      />
+                      <path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v1.384l7.614 2.03a1.5 1.5 0 0 0 .772 0L16 5.884V4.5A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5" />
+                      <path d="M0 12.5A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5V6.85L8.129 8.947a.5.5 0 0 1-.258 0L0 6.85z" />
                     </svg>
-                    <a
-                      href={profile.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
+
+                    {profile.workAt}
+                  </div>
+                )}
+
+                {profile.studiedAt && (
+                  <div className="flex items-center gap-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="bi bi-book-half"
+                      viewBox="0 0 16 16"
                     >
-                      {profile.website}
-                    </a>
+                      <path d="M8.5 2.687c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783" />
+                    </svg>
+
+                    {profile.studiedAt}
                   </div>
                 )}
               </div>
@@ -848,15 +854,29 @@ const ProfilePage = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Website
+                  Work At
                 </label>
                 <input
-                  type="url"
-                  name="website"
-                  value={form.website}
+                  type="text"
+                  name="workAt"
+                  value={form.workAt}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="https://yourwebsite.com"
+                  placeholder="company name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Studied At
+                </label>
+                <input
+                  type="text"
+                  name="studiedAt"
+                  value={form.studiedAt}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="school name"
                 />
               </div>
 

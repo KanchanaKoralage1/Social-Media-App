@@ -11,7 +11,8 @@ public class ProfileResponse {
     private String email;
     private String backgroundImage;
     private String bio;
-    private String website;
+    private String workAt;
+    private String studiedAt;
     private String location;
     private int followersCount;
     private int followingCount;

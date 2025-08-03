@@ -6,7 +6,8 @@ import lombok.Data;
 public class ProfileUpdateRequest {
     private String fullName;
     private String bio;
-    private String website;
+    private String workAt;
+    private String studiedAt;
     private String location;
     private String backgroundImage;
     private String profileImage;

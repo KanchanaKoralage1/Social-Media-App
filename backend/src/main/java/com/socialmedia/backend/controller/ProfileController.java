@@ -44,7 +44,9 @@ public class ProfileController {
             @RequestHeader("Authorization") String token,
             @RequestParam(value = "fullName", required = false) String fullName,
             @RequestParam(value = "bio", required = false) String bio,
-            @RequestParam(value = "website", required = false) String website,
+            //@RequestParam(value = "website", required = false) String website,
+            @RequestParam(value = "studiedAt", required = false) String studiedAt,
+            @RequestParam(value = "workAt", required = false) String workAt,
             @RequestParam(value = "location", required = false) String location,
             @RequestParam(value = "backgroundImage", required = false) MultipartFile backgroundImage,
             @RequestParam(value = "profileImage", required = false) MultipartFile profileImage) {
@@ -54,7 +56,9 @@ public class ProfileController {
             ProfileUpdateRequest request = new ProfileUpdateRequest();
             request.setFullName(fullName);
             request.setBio(bio);
-            request.setWebsite(website);
+            //request.setWebsite(website);
+            request.setWorkAt(workAt);
+            request.setStudiedAt(studiedAt);
             request.setLocation(location);
 
             // Handle file uploads
