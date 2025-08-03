@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+"use client"
+
+import { useState, useEffect } from "react"
+import { Link } from "react-router-dom"
 
 const newsList = [
   {
@@ -20,179 +22,253 @@ const newsList = [
     trend: "AI & Tech",
     engagement: "15.7K",
   },
-];
+]
 
 const RightSide = ({ onFollowChange }) => {
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [dark, setDark] = useState(localStorage.getItem("theme") === "dark");
-  const [users, setUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
-  const [following, setFollowing] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [showSidebar, setShowSidebar] = useState(false)
+  const [dark, setDark] = useState(false)
+  const [users, setUsers] = useState([])
+  const [loadingUsers, setLoadingUsers] = useState(true)
+  const [following, setFollowing] = useState([])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [themeLoading, setThemeLoading] = useState(true)
 
-  // Apply theme and persist in localStorage
-  useEffect(() => {
-    if (dark) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
+  // Function to determine if dark mode should be active
+  const shouldUseDarkMode = (preference) => {
+    if (preference === "dark") return true
+    if (preference === "light") return false
+    if (preference === "system") {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches
     }
-  }, [dark]);
+    return false
+  }
+
+  // Function to apply theme to DOM
+  const applyTheme = (isDark) => {
+    if (isDark) {
+      document.documentElement.classList.add("dark")
+    } else {
+      document.documentElement.classList.remove("dark")
+    }
+  }
+
+  // Fetch user's theme preference from backend
+  const fetchThemePreference = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      setThemeLoading(false)
+      return
+    }
+
+    try {
+      const response = await fetch("http://localhost:8080/api/profile/theme", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const preference = data.themePreference || "system"
+        const isDark = shouldUseDarkMode(preference)
+        setDark(isDark)
+        applyTheme(isDark)
+      } else {
+        // Fallback to system preference if API fails
+        const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+        setDark(systemPrefersDark)
+        applyTheme(systemPrefersDark)
+      }
+    } catch (error) {
+      console.error("Error fetching theme preference:", error)
+      // Fallback to system preference
+      const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+      setDark(systemPrefersDark)
+      applyTheme(systemPrefersDark)
+    } finally {
+      setThemeLoading(false)
+    }
+  }
+
+  // Initialize theme on component mount
+  useEffect(() => {
+    fetchThemePreference()
+  }, [])
+
+  // Listen for system theme changes
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+    const handleSystemThemeChange = async (e) => {
+      // Only update if user has system preference
+      const token = localStorage.getItem("token")
+      if (!token) return
+
+      try {
+        const response = await fetch("http://localhost:8080/api/profile/theme", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.themePreference === "system") {
+            setDark(e.matches)
+            applyTheme(e.matches)
+          }
+        }
+      } catch (error) {
+        console.error("Error checking theme preference:", error)
+      }
+    }
+
+    mediaQuery.addEventListener("change", handleSystemThemeChange)
+    return () => mediaQuery.removeEventListener("change", handleSystemThemeChange)
+  }, [])
 
   // Helper function to construct the full image URL
   const getFullImageUrl = (imagePath) => {
-    if (!imagePath) return null;
-    return imagePath.startsWith("http")
-      ? imagePath
-      : `http://localhost:8080/uploads/${imagePath}`;
-  };
+    if (!imagePath) return null
+    return imagePath.startsWith("http") ? imagePath : `http://localhost:8080/uploads/${imagePath}`
+  }
 
   useEffect(() => {
     const fetchUsers = async () => {
-      setLoadingUsers(true);
+      setLoadingUsers(true)
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token")
         if (!token) {
-          console.error("No token found, cannot fetch users");
-          setUsers([]);
-          setLoadingUsers(false);
-          return;
+          console.error("No token found, cannot fetch users")
+          setUsers([])
+          setLoadingUsers(false)
+          return
         }
         const url = searchQuery
-          ? `http://localhost:8080/api/users/search?query=${encodeURIComponent(
-              searchQuery
-            )}`
-          : "http://localhost:8080/api/users";
+          ? `http://localhost:8080/api/users/search?query=${encodeURIComponent(searchQuery)}`
+          : "http://localhost:8080/api/users"
         const res = await fetch(url, {
           headers: { Authorization: `Bearer ${token}` },
-        });
+        })
         if (res.ok) {
-          const data = await res.json();
+          const data = await res.json()
           setUsers(
             data.map((user) => ({
               ...user,
               profileImage: getFullImageUrl(user.profileImage),
-            }))
-          );
+            })),
+          )
         } else {
-          console.error(
-            `Failed to fetch users: ${res.status} ${res.statusText}`
-          );
-          setUsers([]);
+          console.error(`Failed to fetch users: ${res.status} ${res.statusText}`)
+          setUsers([])
         }
       } catch (err) {
-        console.error("Error fetching users:", err);
-        setUsers([]);
+        console.error("Error fetching users:", err)
+        setUsers([])
       }
-      setLoadingUsers(false);
-    };
+      setLoadingUsers(false)
+    }
 
     const fetchFollowing = async () => {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token")
       if (!token) {
-        console.log("No token found, skipping fetchFollowing");
-        return;
+        console.log("No token found, skipping fetchFollowing")
+        return
       }
       try {
         const res = await fetch("http://localhost:8080/api/profile/following", {
           headers: { Authorization: `Bearer ${token}` },
-        });
+        })
         if (res.ok) {
-          const data = await res.json();
-          setFollowing(data.map((u) => u.username));
+          const data = await res.json()
+          setFollowing(data.map((u) => u.username))
         } else {
-          console.error(
-            `Failed to fetch following: ${res.status} ${res.statusText}`
-          );
-          setFollowing([]);
+          console.error(`Failed to fetch following: ${res.status} ${res.statusText}`)
+          setFollowing([])
         }
       } catch (err) {
-        console.error("Error fetching following:", err);
-        setFollowing([]);
+        console.error("Error fetching following:", err)
+        setFollowing([])
       }
-    };
+    }
 
-    fetchUsers();
-    fetchFollowing();
-  }, [searchQuery]);
-
-  const handleThemeToggle = () => setDark((prev) => !prev);
+    fetchUsers()
+    fetchFollowing()
+  }, [searchQuery])
 
   const handleSearch = (e) => {
-    setSearchQuery(e.target.value);
-  };
+    setSearchQuery(e.target.value)
+  }
 
   useEffect(() => {
-    if (onFollowChange) onFollowChange(following);
-  }, [following, onFollowChange]);
+    if (onFollowChange) onFollowChange(following)
+  }, [following, onFollowChange])
 
   const handleFollow = async (username) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token")
     if (!token) {
-      console.error("No token found, cannot follow user");
-      alert("Please log in to follow users.");
-      return;
+      console.error("No token found, cannot follow user")
+      alert("Please log in to follow users.")
+      return
     }
     try {
-      const res = await fetch(
-        `http://localhost:8080/api/users/${username}/follow`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const res = await fetch(`http://localhost:8080/api/users/${username}/follow`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
       if (res.ok) {
-        setFollowing((prev) => [...prev, username]);
+        setFollowing((prev) => [...prev, username])
       } else {
-        const errorText = await res.text();
-        console.error(
-          `Failed to follow user: ${res.status} ${res.statusText} - ${errorText}`
-        );
-        alert(`Failed to follow ${username}: ${errorText || res.statusText}`);
+        const errorText = await res.text()
+        console.error(`Failed to follow user: ${res.status} ${res.statusText} - ${errorText}`)
+        alert(`Failed to follow ${username}: ${errorText || res.statusText}`)
       }
     } catch (err) {
-      console.error("Error following user:", err);
-      alert("An error occurred while trying to follow the user.");
+      console.error("Error following user:", err)
+      alert("An error occurred while trying to follow the user.")
     }
-  };
+  }
 
   const handleUnfollow = async (username) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token")
     if (!token) {
-      console.error("No token found, cannot unfollow user");
-      alert("Please log in to unfollow users.");
-      return;
+      console.error("No token found, cannot unfollow user")
+      alert("Please log in to unfollow users.")
+      return
     }
     try {
-      const res = await fetch(
-        `http://localhost:8080/api/users/${username}/unfollow`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const res = await fetch(`http://localhost:8080/api/users/${username}/unfollow`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
       if (res.ok) {
-        setFollowing((prev) => prev.filter((u) => u !== username));
+        setFollowing((prev) => prev.filter((u) => u !== username))
       } else {
-        const errorText = await res.text();
-        console.error(
-          `Failed to unfollow user: ${res.status} ${res.statusText} - ${errorText}`
-        );
-        alert(`Failed to unfollow ${username}: ${errorText || res.statusText}`);
+        const errorText = await res.text()
+        console.error(`Failed to unfollow user: ${res.status} ${res.statusText} - ${errorText}`)
+        alert(`Failed to unfollow ${username}: ${errorText || res.statusText}`)
       }
     } catch (err) {
-      console.error("Error unfollowing user:", err);
-      alert("An error occurred while trying to unfollow the user.");
+      console.error("Error unfollowing user:", err)
+      alert("An error occurred while trying to unfollow the user.")
     }
-  };
+  }
+
+  // Show loading spinner while theme is being loaded
+  if (themeLoading) {
+    return (
+      <div className="hidden lg:block w-80">
+        <div className="h-screen sticky top-0 bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 overflow-y-auto flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -202,18 +278,8 @@ const RightSide = ({ onFollowChange }) => {
           onClick={() => setShowSidebar(true)}
           className="p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 shadow-lg rounded-xl hover:shadow-xl transition-all duration-200"
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
       </div>
@@ -229,8 +295,6 @@ const RightSide = ({ onFollowChange }) => {
             onClick={(e) => e.stopPropagation()}
           >
             <RightSideContent
-              dark={dark}
-              handleThemeToggle={handleThemeToggle}
               closeSidebar={() => setShowSidebar(false)}
               users={users}
               loadingUsers={loadingUsers}
@@ -248,8 +312,6 @@ const RightSide = ({ onFollowChange }) => {
       <div className="hidden lg:block w-80">
         <div className="h-screen sticky top-0 bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 overflow-y-auto">
           <RightSideContent
-            dark={dark}
-            handleThemeToggle={handleThemeToggle}
             users={users}
             loadingUsers={loadingUsers}
             following={following}
@@ -261,12 +323,10 @@ const RightSide = ({ onFollowChange }) => {
         </div>
       </div>
     </>
-  );
-};
+  )
+}
 
 const RightSideContent = ({
-  dark,
-  handleThemeToggle,
   closeSidebar,
   users,
   loadingUsers,
@@ -278,16 +338,11 @@ const RightSideContent = ({
 }) => {
   return (
     <div className="flex flex-col h-full p-4 space-y-4">
-      {/* Header with search and theme toggle */}
+      {/* Header with search */}
       <div className="flex items-center gap-3 flex-shrink-0">
         <div className="relative flex-1">
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -308,72 +363,20 @@ const RightSideContent = ({
               onClick={() => handleSearch({ target: { value: "" } })}
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           )}
         </div>
-
-        <button
-          onClick={handleThemeToggle}
-          className="p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 flex-shrink-0"
-        >
-          {dark ? (
-            <svg
-              className="w-5 h-5 text-orange-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <circle cx="12" cy="12" r="5" strokeWidth="2" />
-              <path
-                strokeWidth="2"
-                d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M17.66 17.66l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M17.66 6.34l1.42-1.42"
-              />
-            </svg>
-          ) : (
-            <svg
-              className="w-5 h-5 text-gray-700"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeWidth="2"
-                d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"
-              />
-            </svg>
-          )}
-        </button>
 
         {closeSidebar && (
           <button
             onClick={closeSidebar}
             className="lg:hidden p-3 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         )}
@@ -385,27 +388,13 @@ const RightSideContent = ({
         <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-green-800 dark:text-green-200">
-                Get Verified
-              </h3>
-              <p className="text-sm text-green-600 dark:text-green-300">
-                Subscribe to unlock new features
-              </p>
+              <h3 className="font-semibold text-green-800 dark:text-green-200">Get Verified</h3>
+              <p className="text-sm text-green-600 dark:text-green-300">Subscribe to unlock new features</p>
             </div>
           </div>
           <button className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200">
@@ -417,18 +406,8 @@ const RightSideContent = ({
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-              <svg
-                className="w-5 h-5 text-orange-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                />
+              <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
               What's happening
             </h3>
@@ -452,9 +431,7 @@ const RightSideContent = ({
                     >
                       {news.title}
                     </a>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {news.engagement} people talking
-                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{news.engagement} people talking</p>
                   </div>
                   <svg
                     className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors"
@@ -462,12 +439,7 @@ const RightSideContent = ({
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
               </div>
@@ -521,10 +493,7 @@ const RightSideContent = ({
                     key={user.username}
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <Link
-                      to={`/profile/${user.username}`}
-                      className="flex items-center gap-3 flex-1 min-w-0"
-                    >
+                    <Link to={`/profile/${user.username}`} className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="relative flex-shrink-0">
                         <img
                           src={user.profileImage || "/default-profile.png"}
@@ -537,18 +506,16 @@ const RightSideContent = ({
                         <div className="font-semibold text-gray-900 dark:text-white truncate">
                           {user.fullName || user.username}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                          @{user.username}
-                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 truncate">@{user.username}</div>
                       </div>
                     </Link>
 
                     <button
                       onClick={() => {
                         if (following.includes(user.username)) {
-                          handleUnfollow(user.username);
+                          handleUnfollow(user.username)
                         } else {
-                          handleFollow(user.username);
+                          handleFollow(user.username)
                         }
                       }}
                       className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -557,9 +524,7 @@ const RightSideContent = ({
                           : "bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md"
                       }`}
                     >
-                      {following.includes(user.username)
-                        ? "Following"
-                        : "Follow"}
+                      {following.includes(user.username) ? "Following" : "Follow"}
                     </button>
                   </div>
                 ))}
@@ -572,18 +537,8 @@ const RightSideContent = ({
                       className="w-full flex items-center justify-center gap-2 py-3 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
                     >
                       <span>Show more</span>
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </Link>
                   </div>
@@ -594,7 +549,7 @@ const RightSideContent = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default RightSide;
+export default RightSide
