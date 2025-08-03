@@ -259,8 +259,9 @@ const ProfilePage = () => {
   };
 
   const handleDelete = async (post) => {
-    const token = localStorage.getItem("token");
-    if (!window.confirm("Are you sure you want to delete this post?")) return;
+  const token = localStorage.getItem("token");
+  if (!window.confirm("Are you sure you want to delete this post?")) return;
+  try {
     const res = await fetch(`http://localhost:8080/api/posts/${post.id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
@@ -271,8 +272,14 @@ const ProfilePage = () => {
         ...prevProfile,
         postsCount: prevProfile.postsCount - 1,
       }));
+    } else {
+      const errorText = await res.text();
+      alert(`Failed to delete post: ${errorText || "Unknown error"}`);
     }
-  };
+  } catch (error) {
+    alert(`An error occurred while deleting the post: ${error.message}`);
+  }
+};
 
   const refetchPosts = async () => {
     if (!profile?.id) return;

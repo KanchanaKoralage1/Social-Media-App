@@ -74,7 +74,8 @@ public class PostController {
             postService.deletePost(postId, token.replace("Bearer ", ""));
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+
+            return ResponseEntity.badRequest().body("Failed to delete post: " + e.getMessage());
         }
     }
 

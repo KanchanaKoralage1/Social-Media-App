@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const LoginPage = () => {
@@ -44,10 +44,39 @@ const LoginPage = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    window.location.href =
-      "http://localhost:8080/api/auth/oauth2/callback/google";
+  const handleGoogleLogin = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/auth/oauth2/google", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // Include cookies for session
+      });
+      const authUrl = await res.text();
+      window.location.href = authUrl;
+    } catch (err) {
+      setError("Failed to initiate Google login: " + err.message);
+    }
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const token = params.get("token");
+    const username = params.get("username");
+    const email = params.get("email");
+    const error = params.get("error");
+
+    if (token && username && email) {
+      localStorage.setItem("token", token);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ username, email })
+      );
+      window.location.href = "/home";
+    } else if (error) {
+      setError(decodeURIComponent(error));
+    }
+  }, [location]);
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 px-4">

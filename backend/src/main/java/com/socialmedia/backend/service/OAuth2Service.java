@@ -14,9 +14,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -44,20 +45,32 @@ public class OAuth2Service {
                     JacksonFactory.getDefaultInstance(),
                     clientId,
                     clientSecret,
-                    Arrays.asList("email", "profile"))
+                    Arrays.asList(
+                            "https://www.googleapis.com/auth/userinfo.email",
+                            "https://www.googleapis.com/auth/userinfo.profile",
+                            "openid"))
                     .setAccessType("offline")
                     .build();
         }
         return flow;
     }
 
-    public String generateGoogleAuthUrl() {
+    public String generateGoogleAuthUrl(HttpSession session) {
+        String state = UUID.randomUUID().toString();
+        session.setAttribute("oauth_state", state);
         return getFlow().newAuthorizationUrl()
                 .setRedirectUri(redirectUri)
+                .setAccessType("offline")
+                .set("prompt", "select_account consent")
+                .setState(state)
                 .build();
     }
 
-    public AuthResponse processGoogleCallback(String code) {
+    public AuthResponse processGoogleCallback(String code, String state, HttpSession session) {
+        String storedState = (String) session.getAttribute("oauth_state");
+        if (state == null || !state.equals(storedState)) {
+            throw new RuntimeException("Invalid state parameter");
+        }
         try {
             GoogleTokenResponse tokenResponse = getFlow()
                     .newTokenRequest(code)
@@ -67,19 +80,22 @@ public class OAuth2Service {
             // Get user info from Google
             String email = tokenResponse.parseIdToken().getPayload().getEmail();
             String name = (String) tokenResponse.parseIdToken().getPayload().get("name");
+            String username = (String) tokenResponse.parseIdToken().getPayload().get("given_name");
 
             // Find or create user
             User user = userRepository.findByEmail(email)
                     .orElseGet(() -> {
                         User newUser = new User();
                         newUser.setEmail(email);
-                        newUser.setUsername(email.split("@")[0]);
-                        newUser.setFullName(name);
-                        newUser.setPassword(""); // Google authenticated users don't need password
+                        String baseUsername = username != null ? username : email.split("@")[0];
+                        String uniqueUsername = generateUniqueUsername(baseUsername);
+                        newUser.setUsername(uniqueUsername);
+                        newUser.setFullName(name != null ? name : "");
+                        newUser.setPassword("");
                         return userRepository.save(newUser);
                     });
 
-            // Generate JWT token using UserDetails
+            // Generate JWT token
             UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
             String token = jwtTokenUtil.generateToken(userDetails);
 
@@ -91,7 +107,17 @@ public class OAuth2Service {
 
             return response;
         } catch (IOException e) {
-            throw new RuntimeException("Failed to process Google callback", e);
+            throw new RuntimeException("Failed to process Google callback: " + e.getMessage(), e);
         }
+    }
+
+    private String generateUniqueUsername(String baseUsername) {
+        String uniqueUsername = baseUsername;
+        int suffix = 1;
+        while (userRepository.findByUsername(uniqueUsername).isPresent()) {
+            uniqueUsername = baseUsername + suffix;
+            suffix++;
+        }
+        return uniqueUsername;
     }
 }

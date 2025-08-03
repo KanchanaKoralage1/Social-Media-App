@@ -25,6 +25,7 @@ function App() {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/oauth2/callback" element={<LoginPage />} />
 
         <Route element={<Layout />}>
           <Route path="/homepage" element={<Homepage />} />

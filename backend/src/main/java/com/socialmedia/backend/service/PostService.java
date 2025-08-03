@@ -20,7 +20,8 @@ public class PostService {
     private final CustomUserDetailsService customUserDetailsService;
     private final FileUploadService fileUploadService;
     private final SavedPostRepository savedPostRepository;
-    private final NotificationService notificationService; 
+    private final NotificationService notificationService;
+    private final NotificationRepository notificationRepository;
 
     public PostResponse createPost(String token, String content, MultipartFile[] images) {
         User user = customUserDetailsService.getUserFromToken(token);
@@ -168,7 +169,7 @@ public class PostService {
         }
 
         Comment savedComment = commentRepository.save(comment);
-        notificationService.createNotification(user, post.getUser(), post, "COMMENT"); 
+        notificationService.createNotification(user, post.getUser(), post, "COMMENT");
         return convertToCommentDTO(savedComment);
     }
 
@@ -244,6 +245,11 @@ public class PostService {
             throw new RuntimeException("You can only delete your own posts");
         }
 
+        postRepository.updateOriginalPostIdToNull(postId);
+
+        // Delete related notifications
+        notificationRepository.deleteByPostId(postId);
+
         // If this is a shared post, decrement the shareCount of the original post
         if (post.getOriginalPost() != null) {
             Post root = post.getOriginalPost();
@@ -300,9 +306,11 @@ public class PostService {
 
         Post shared = new Post();
         shared.setUser(user);
-        shared.setContent(""); // or let user add their own caption
+        shared.setContent("");
+
         shared.setImageUrl("");
-        shared.setOriginalPost(root); // always point to root
+        shared.setOriginalPost(root);
+
         postRepository.save(shared);
         notificationService.createNotification(user, root.getUser(), root, "SHARE");
 

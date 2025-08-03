@@ -2,34 +2,28 @@ package com.socialmedia.backend.controller;
 
 import com.socialmedia.backend.dto.AuthResponse;
 import com.socialmedia.backend.service.OAuth2Service;
-
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-
-import java.nio.charset.StandardCharsets;
-
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.net.URLEncoder;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/auth/oauth2")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class OAuth2Controller {
 
     private final OAuth2Service oAuth2Service;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping("/google")
-    public ResponseEntity<?> getGoogleAuthUrl() {
+    public ResponseEntity<?> getGoogleAuthUrl(HttpServletRequest request) {
         try {
-            String authUrl = oAuth2Service.generateGoogleAuthUrl();
+            String authUrl = oAuth2Service.generateGoogleAuthUrl(request.getSession());
             System.out.println("Generated Google Auth URL: " + authUrl);
             return ResponseEntity.ok(authUrl);
         } catch (Exception e) {
@@ -40,21 +34,40 @@ public class OAuth2Controller {
         }
     }
 
-    @GetMapping("/callback/google")
-    public void handleGoogleCallback(@RequestParam String code, HttpServletResponse response) throws IOException {
+  @GetMapping("/callback/google")
+public ResponseEntity<?> handleGoogleCallback(
+        @RequestParam("code") String code,
+        @RequestParam(value = "state", required = false) String state,
+        HttpSession session) {
+    try {
+        AuthResponse authResponse = oAuth2Service.processGoogleCallback(code, state, session);
+        String redirectUrl = null;
         try {
-            AuthResponse authResponse = oAuth2Service.processGoogleCallback(code);
-
-            // Encode the response data as URL hash parameters
-            String redirectUrl = String.format("http://localhost:5173/auth/callback#%s",
-                    URLEncoder.encode(objectMapper.writeValueAsString(authResponse),
-                            StandardCharsets.UTF_8.toString()));
-
-            response.sendRedirect(redirectUrl);
+            redirectUrl = String.format(
+                    "http://localhost:5173/oauth2/callback?token=%s&username=%s&email=%s",
+                    URLEncoder.encode(authResponse.getToken(), StandardCharsets.UTF_8.toString()),
+                    URLEncoder.encode(authResponse.getUsername(), StandardCharsets.UTF_8.toString()),
+                    URLEncoder.encode(authResponse.getEmail(), StandardCharsets.UTF_8.toString()));
         } catch (Exception e) {
-            response.sendRedirect("http://localhost:5173/login?error=" +
-                    URLEncoder.encode("Failed to authenticate with Google", StandardCharsets.UTF_8.toString()));
+            throw new RuntimeException("Encoding error", e);
         }
-    }
 
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .header("Location", redirectUrl)
+                .build();
+    } catch (Exception e) {
+        String errorUrl = null;
+        try {
+            errorUrl = String.format(
+                    "http://localhost:5173/oauth2/callback?error=%s",
+                    URLEncoder.encode("Failed to authenticate with Google: " + e.getMessage(), StandardCharsets.UTF_8.toString()));
+        } catch (Exception encodingError) {
+            errorUrl = "http://localhost:5173/oauth2/callback?error=Unknown%20Error";
+        }
+
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .header("Location", errorUrl)
+                .build();
+    }
+}
 }
