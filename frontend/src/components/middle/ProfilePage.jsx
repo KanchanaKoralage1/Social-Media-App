@@ -10,6 +10,9 @@ const ProfilePage = () => {
   const [form, setForm] = useState({});
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [backgroundImageFile, setBackgroundImageFile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("posts");
   const profileImageInput = useRef();
   const backgroundImageInput = useRef();
   const { username } = useParams();
@@ -24,14 +27,12 @@ const ProfilePage = () => {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
       setCurrentLoggedInUser(user);
-      console.log("Current logged-in user:", user?.username);
     } catch (e) {
       console.error("Failed to parse user from localStorage", e);
     }
   }, []);
 
   // Determine if the viewed profile is the current user's profile
-  // This condition is crucial for showing Edit vs. Follow button
   const isCurrentUserProfile =
     currentLoggedInUser &&
     profile &&
@@ -39,8 +40,8 @@ const ProfilePage = () => {
 
   useEffect(() => {
     const fetchProfileAndPosts = async () => {
+      setLoading(true);
       const token = localStorage.getItem("token");
-      // Use username from URL if present, otherwise fetch current user's profile
       const url = username
         ? `http://localhost:8080/api/profile/${username}`
         : "http://localhost:8080/api/profile";
@@ -50,13 +51,11 @@ const ProfilePage = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) {
-          console.error("Failed to fetch profile:", res.status, res.statusText);
-          setProfile(null);
-          setPosts([]);
+          setError("Profile not found");
+          setLoading(false);
           return;
         }
         const data = await res.json();
-        console.log("Profile API response:", data);
         setProfile(data);
         setForm({
           fullName: data.fullName || "",
@@ -66,91 +65,85 @@ const ProfilePage = () => {
         });
 
         if (data.id) {
+          setPostsLoading(true);
           const postsRes = await fetch(
             `http://localhost:8080/api/posts/user/${data.id}`,
             {
               headers: { Authorization: `Bearer ${token}` },
             }
           );
-          if (!postsRes.ok) {
-            console.error(
-              "Failed to fetch posts:",
-              postsRes.status,
-              postsRes.statusText
+          if (postsRes.ok) {
+            const postsData = await postsRes.json();
+            setPosts(
+              postsData.map((post) => ({
+                id: post.id,
+                user: {
+                  username: post.user?.username,
+                  fullName: post.user?.fullName,
+                  profileImage: post.user?.profileImage
+                    ? post.user.profileImage.startsWith("http")
+                      ? post.user.profileImage
+                      : `http://localhost:8080/uploads/${post.user.profileImage}`
+                    : "/default-profile.png",
+                },
+                caption: post.content,
+                images: post.imageUrl
+                  ? post.imageUrl
+                      .split(",")
+                      .map((img) =>
+                        img.startsWith("http")
+                          ? img
+                          : `http://localhost:8080/uploads/${img}`
+                      )
+                  : [],
+                createdAt: post.createdAt,
+                likes: post.likes,
+                comments: post.comments,
+                isLiked: post.isLiked,
+                shareCount: post.shareCount,
+                originalPostId: post.originalPostId || null,
+                originalUser: post.originalUser
+                  ? {
+                      username: post.originalUser.username,
+                      fullName: post.originalUser.fullName,
+                      profileImage: post.originalUser.profileImage
+                        ? post.originalUser.profileImage.startsWith("http")
+                          ? post.originalUser.profileImage
+                          : `http://localhost:8080/uploads/${post.originalUser.profileImage}`
+                        : "/default-profile.png",
+                    }
+                  : null,
+                originalContent: post.originalContent,
+                originalImages: post.originalImageUrl
+                  ? post.originalImageUrl
+                      .split(",")
+                      .map((img) =>
+                        img.startsWith("http")
+                          ? img
+                          : `http://localhost:8080/uploads/${img}`
+                      )
+                  : [],
+                isSaved: post.isSaved || false,
+              }))
             );
-            setPosts([]);
-            return;
           }
-          const postsData = await postsRes.json();
-          console.log("Posts API response:", postsData);
-          setPosts(
-            postsData.map((post) => ({
-              id: post.id,
-              user: {
-                username: post.user?.username,
-                fullName: post.user?.fullName,
-                profileImage: post.user?.profileImage
-                  ? post.user.profileImage.startsWith("http")
-                    ? post.user.profileImage
-                    : `http://localhost:8080/uploads/${post.user.profileImage}`
-                  : "/default-profile.png",
-              },
-              caption: post.content,
-              images: post.imageUrl
-                ? post.imageUrl
-                    .split(",")
-                    .map((img) =>
-                      img.startsWith("http")
-                        ? img
-                        : `http://localhost:8080/uploads/${img}`
-                    )
-                : [],
-              createdAt: post.createdAt,
-              likes: post.likes,
-              comments: post.comments,
-              isLiked: post.isLiked,
-              shareCount: post.shareCount,
-              originalPostId: post.originalPostId || null,
-              originalUser: post.originalUser
-                ? {
-                    username: post.originalUser.username,
-                    fullName: post.originalUser.fullName,
-                    profileImage: post.originalUser.profileImage
-                      ? post.originalUser.profileImage.startsWith("http")
-                        ? post.originalUser.profileImage
-                        : `http://localhost:8080/uploads/${post.originalUser.profileImage}`
-                      : "/default-profile.png",
-                  }
-                : null,
-              originalContent: post.originalContent,
-              originalImages: post.originalImageUrl
-                ? post.originalImageUrl
-                    .split(",")
-                    .map((img) =>
-                      img.startsWith("http")
-                        ? img
-                        : `http://localhost:8080/uploads/${img}`
-                    )
-                : [],
-              isSaved: post.isSaved || false,
-            }))
-          );
+          setPostsLoading(false);
         }
       } catch (error) {
         console.error("Error fetching profile or posts:", error);
-        setProfile(null);
-        setPosts([]);
+        setError("Failed to load profile");
       }
+      setLoading(false);
     };
 
     fetchProfileAndPosts();
-  }, [username, navigate]); // Re-fetch when username in URL changes
+  }, [username, navigate]);
 
-  // Check following status when profile or currentLoggedInUser changes
+  // Check following status
   useEffect(() => {
     const checkFollowingStatus = async () => {
       if (!currentLoggedInUser || !profile || isCurrentUserProfile) {
-        setIsFollowing(false); // Not following self, or no data yet
+        setIsFollowing(false);
         return;
       }
       const token = localStorage.getItem("token");
@@ -158,7 +151,6 @@ const ProfilePage = () => {
         setIsFollowing(false);
         return;
       }
-
       try {
         const res = await fetch("http://localhost:8080/api/profile/following", {
           headers: { Authorization: `Bearer ${token}` },
@@ -166,24 +158,10 @@ const ProfilePage = () => {
         if (res.ok) {
           const data = await res.json();
           const followingUsernames = data.map((u) => u.username);
-          console.log(
-            "Checking if following",
-            profile.username,
-            "in",
-            followingUsernames
-          );
           setIsFollowing(followingUsernames.includes(profile.username));
-        } else {
-          console.error(
-            "Failed to fetch following list:",
-            res.status,
-            res.statusText
-          );
-          setIsFollowing(false);
         }
       } catch (err) {
         console.error("Error checking following status:", err);
-        setIsFollowing(false);
       }
     };
 
@@ -197,6 +175,7 @@ const ProfilePage = () => {
   const handleProfileImageChange = (e) => {
     setProfileImageFile(e.target.files[0]);
   };
+
   const handleBackgroundImageChange = (e) => {
     setBackgroundImageFile(e.target.files[0]);
   };
@@ -225,7 +204,6 @@ const ProfilePage = () => {
         setEditMode(false);
         setProfileImageFile(null);
         setBackgroundImageFile(null);
-        // Update localStorage user profile image if it's the current user
         if (
           currentLoggedInUser &&
           currentLoggedInUser.username === updated.username
@@ -246,44 +224,35 @@ const ProfilePage = () => {
       }
     } catch (error) {
       alert("An error occurred while updating profile.");
-      console.error("Update profile error:", error);
     }
   };
 
   const handleFollowToggle = async () => {
     const token = localStorage.getItem("token");
     if (!token || !profile?.username) return;
-
     const action = isFollowing ? "unfollow" : "follow";
-    const method = "POST";
 
     try {
       const res = await fetch(
         `http://localhost:8080/api/users/${profile.username}/${action}`,
         {
-          method: method,
+          method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
       );
-
       if (res.ok) {
         setIsFollowing(!isFollowing);
-        // Optimistically update follower count
         setProfile((prevProfile) => ({
           ...prevProfile,
           followersCount: isFollowing
             ? prevProfile.followersCount - 1
             : prevProfile.followersCount + 1,
         }));
-      } else {
-        const errorText = await res.text();
-        alert(`Failed to ${action} user: ${errorText || res.statusText}`);
       }
     } catch (err) {
-      alert(`An error occurred while trying to ${action} the user.`);
       console.error(`Error during ${action}:`, err);
     }
   };
@@ -297,45 +266,23 @@ const ProfilePage = () => {
     });
     if (res.ok) {
       setPosts((prev) => prev.filter((p) => p.id !== post.id));
-      // Also decrement postsCount in profile state
       setProfile((prevProfile) => ({
         ...prevProfile,
         postsCount: prevProfile.postsCount - 1,
       }));
-    } else {
-      alert("Failed to delete post.");
     }
   };
 
-  const handleEdit = async (
-    post,
-    updatedContent,
-    keptImages,
-    newImageFiles
-  ) => {
+  const refetchPosts = async () => {
+    if (!profile?.id) return;
     const token = localStorage.getItem("token");
-    const formData = new FormData();
-    formData.append("content", updatedContent);
-
-    // Only include images for non-shared posts
-    if (!post.originalUser) {
-      formData.append("keptImages", keptImages.join(","));
-      newImageFiles.forEach((file) => formData.append("images", file));
-    }
-
-    const res = await fetch(`http://localhost:8080/api/posts/${post.id}`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
-    if (res.ok) {
-      // Re-fetch posts for the current profile to ensure updated data
-      const postsRes = await fetch(
-        `http://localhost:8080/api/posts/user/${profile.id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+    const postsRes = await fetch(
+      `http://localhost:8080/api/posts/user/${profile.id}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    if (postsRes.ok) {
       const postsData = await postsRes.json();
       setPosts(
         postsData.map((post) => ({
@@ -385,10 +332,32 @@ const ProfilePage = () => {
                     : `http://localhost:8080/uploads/${img}`
                 )
             : [],
+          isSaved: post.isSaved || false,
         }))
       );
-    } else {
-      alert("Failed to update post.");
+    }
+  };
+
+  const handleEdit = async (
+    post,
+    updatedContent,
+    keptImages,
+    newImageFiles
+  ) => {
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("content", updatedContent);
+    if (!post.originalUser) {
+      formData.append("keptImages", keptImages.join(","));
+      newImageFiles.forEach((file) => formData.append("images", file));
+    }
+    const res = await fetch(`http://localhost:8080/api/posts/${post.id}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    if (res.ok) {
+      refetchPosts();
     }
   };
 
@@ -398,64 +367,7 @@ const ProfilePage = () => {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
     });
-    // Re-fetch posts to update like counts and isLiked status
-    const postsRes = await fetch(
-      `http://localhost:8080/api/posts/user/${profile.id}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-    const postsData = await postsRes.json();
-    setPosts(
-      postsData.map((post) => ({
-        id: post.id,
-        user: {
-          username: post.user?.username,
-          fullName: post.user?.fullName,
-          profileImage: post.user?.profileImage
-            ? post.user.profileImage.startsWith("http")
-              ? post.user.profileImage
-              : `http://localhost:8080/uploads/${post.user.profileImage}`
-            : "/default-profile.png",
-        },
-        caption: post.content,
-        images: post.imageUrl
-          ? post.imageUrl
-              .split(",")
-              .map((img) =>
-                img.startsWith("http")
-                  ? img
-                  : `http://localhost:8080/uploads/${img}`
-              )
-          : [],
-        createdAt: post.createdAt,
-        likes: post.likes,
-        comments: post.comments,
-        isLiked: post.isLiked,
-        shareCount: post.shareCount,
-        originalUser: post.originalUser
-          ? {
-              username: post.originalUser.username,
-              fullName: post.originalUser.fullName,
-              profileImage: post.originalUser.profileImage
-                ? post.originalUser.profileImage.startsWith("http")
-                  ? post.originalUser.profileImage
-                  : `http://localhost:8080/uploads/${post.originalUser.profileImage}`
-                : "/default-profile.png",
-            }
-          : null,
-        originalContent: post.originalContent,
-        originalImages: post.originalImageUrl
-          ? post.originalImageUrl
-              .split(",")
-              .map((img) =>
-                img.startsWith("http")
-                  ? img
-                  : `http://localhost:8080/uploads/${img}`
-              )
-          : [],
-      }))
-    );
+    refetchPosts();
   };
 
   const handleShare = async (post) => {
@@ -464,258 +376,583 @@ const ProfilePage = () => {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
     });
-    // Re-fetch posts to update share counts
-    const postsRes = await fetch(
-      `http://localhost:8080/api/posts/user/${profile.id}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-    const postsData = await postsRes.json();
-    setPosts(
-      postsData.map((post) => ({
-        id: post.id,
-        user: {
-          username: post.user?.username,
-          fullName: post.user?.fullName,
-          profileImage: post.user?.profileImage
-            ? post.user.profileImage.startsWith("http")
-              ? post.user.profileImage
-              : `http://localhost:8080/uploads/${post.user.profileImage}`
-            : "/default-profile.png",
-        },
-        caption: post.content,
-        images: post.imageUrl
-          ? post.imageUrl
-              .split(",")
-              .map((img) =>
-                img.startsWith("http")
-                  ? img
-                  : `http://localhost:8080/uploads/${img}`
-              )
-          : [],
-        createdAt: post.createdAt,
-        likes: post.likes,
-        comments: post.comments,
-        isLiked: post.isLiked,
-        shareCount: post.shareCount,
-        originalUser: post.originalUser
-          ? {
-              username: post.originalUser.username,
-              fullName: post.originalUser.fullName,
-              profileImage: post.originalUser.profileImage
-                ? post.originalUser.profileImage.startsWith("http")
-                  ? post.originalUser.profileImage
-                  : `http://localhost:8080/uploads/${post.originalUser.profileImage}`
-                : "/default-profile.png",
-            }
-          : null,
-        originalContent: post.originalContent,
-        originalImages: post.originalImageUrl
-          ? post.originalImageUrl
-              .split(",")
-              .map((img) =>
-                img.startsWith("http")
-                  ? img
-                  : `http://localhost:8080/uploads/${img}`
-              )
-          : [],
-      }))
-    );
+    refetchPosts();
   };
 
-  const handleMessage = () => {
-    setIsMessageModalOpen(true);
-  };
-
-  if (!profile) {
+  if (loading) {
     return (
-      <div className="text-center mt-10 text-gray-500">Loading profile...</div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-4xl mx-auto">
+          {/* Header Skeleton */}
+          <div className="relative">
+            <div className="h-64 bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+            <div className="absolute left-8 -bottom-16">
+              <div className="w-32 h-32 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse border-4 border-white dark:border-gray-800"></div>
+            </div>
+          </div>
+          {/* Profile Info Skeleton */}
+          <div className="pt-20 px-8 pb-8">
+            <div className="flex justify-between items-start">
+              <div className="space-y-3">
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48 animate-pulse"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-64 animate-pulse"></div>
+              </div>
+              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
-  return (
-    <div className="max-w-2xl mx-auto mt-8 bg-gray-100 rounded shadow overflow-hidden">
-      <div className="relative h-48 bg-gray-200">
-        <img
-          src={
-            profile.backgroundImage
-              ? profile.backgroundImage.startsWith("http")
-                ? profile.backgroundImage
-                : `http://localhost:8080/uploads/${profile.backgroundImage}`
-              : "/default-bg.jpg"
-          }
-          alt="Background"
-          className="w-full h-48 object-cover"
-        />
-        <div className="absolute left-6 -bottom-12">
-          <img
-            src={
-              profile.profileImage
-                ? profile.profileImage.startsWith("http")
-                  ? profile.profileImage
-                  : `http://localhost:8080/uploads/${profile.profileImage}`
-                : "/default-profile.png"
-            }
-            alt="Profile"
-            className="w-24 h-24 rounded-full border-4 border-white object-cover bg-white"
-          />
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+            <svg
+              className="w-8 h-8 text-red-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Profile not found
+          </h3>
+          <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+          <button
+            onClick={() => navigate("/home")}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Back to Home
+          </button>
         </div>
       </div>
-      <div className="pt-16 px-6 pb-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <div className="text-2xl font-bold">
-              {profile.fullName || profile.username}
+    );
+  }
+
+  if (!profile) return null;
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-4xl mx-auto">
+        {/* Cover Photo */}
+        <div className="relative">
+          <div className="h-64 bg-gradient-to-r from-blue-400 to-purple-500 overflow-hidden">
+            <img
+              src={
+                profile.backgroundImage
+                  ? profile.backgroundImage.startsWith("http")
+                    ? profile.backgroundImage
+                    : `http://localhost:8080/uploads/${profile.backgroundImage}`
+                  : "/placeholder.svg?height=256&width=1024"
+              }
+              alt="Cover"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          {/* Profile Picture */}
+          <div className="absolute left-8 -bottom-16">
+            <div className="relative">
+              <img
+                src={
+                  profile.profileImage
+                    ? profile.profileImage.startsWith("http")
+                      ? profile.profileImage
+                      : `http://localhost:8080/uploads/${profile.profileImage}`
+                    : "/placeholder.svg?height=128&width=128"
+                }
+                alt="Profile"
+                className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 object-cover bg-white shadow-xl"
+              />
+              <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white dark:border-gray-800"></div>
             </div>
           </div>
+        </div>
 
-          {isCurrentUserProfile ? (
-            <button
-              className="px-4 py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700"
-              onClick={() => setEditMode(true)}
-            >
-              Edit Profile
-            </button>
-          ) : (
-            <>
+        {/* Profile Info */}
+        <div className="pt-20 px-8 pb-8 bg-white dark:bg-gray-800 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {profile.fullName || profile.username}
+                </h1>
+                {profile.fullName && (
+                  <span className="text-lg text-gray-500 dark:text-gray-400">
+                    @{profile.username}
+                  </span>
+                )}
+              </div>
+
+              {profile.bio && (
+                <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed max-w-2xl">
+                  {profile.bio}
+                </p>
+              )}
+
+              <div className="flex flex-wrap gap-4 text-gray-600 dark:text-gray-400 mb-4">
+                {profile.location && (
+                  <div className="flex items-center gap-1">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    <span>{profile.location}</span>
+                  </div>
+                )}
+                {profile.website && (
+                  <div className="flex items-center gap-1">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                      />
+                    </svg>
+                    <a
+                      href={profile.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      {profile.website}
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Stats */}
+              <div className="flex gap-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {profile.followersCount || 0}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Followers
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {profile.followingCount || 0}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Following
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {profile.postsCount || 0}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Posts
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              {isCurrentUserProfile ? (
+                <button
+                  onClick={() => setEditMode(true)}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                  Edit Profile
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={handleFollowToggle}
+                    className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                      isFollowing
+                        ? "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}
+                  >
+                    {isFollowing ? (
+                      <>
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        Following
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
+                        </svg>
+                        Follow
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setIsMessageModalOpen(true)}
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                      />
+                    </svg>
+                    Message
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+          <div className="px-8">
+            <nav className="flex space-x-8">
               <button
-                className={`px-4 py-2 rounded font-semibold transition ${
-                  isFollowing
-                    ? "bg-gray-300 text-gray-800 hover:bg-gray-400"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
+                onClick={() => setActiveTab("posts")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === "posts"
+                    ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
-                onClick={handleFollowToggle}
               >
-                {isFollowing ? "Following" : "Follow"}
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+                    />
+                  </svg>
+                  Posts
+                </div>
               </button>
+            </nav>
+          </div>
+        </div>
 
-              <button
-                className="px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700"
-                onClick={handleMessage}
-              >
-                Message
-              </button>
-            </>
+        {/* Posts Content */}
+        <div className="px-4 py-6">
+          {postsLoading ? (
+            <div className="space-y-6">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 animate-pulse"
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/6"></div>
+                    </div>
+                  </div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-4"></div>
+                  <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                </div>
+              ))}
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                <svg
+                  className="w-12 h-12 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                No posts yet
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                {isCurrentUserProfile
+                  ? "Share your first post to get started!"
+                  : "This user hasn't posted anything yet."}
+              </p>
+            </div>
+          ) : (
+            <div className="max-w-2xl mx-auto space-y-6">
+              {posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  currentUser={currentLoggedInUser}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onLike={handleLike}
+                  onShare={handleShare}
+                />
+              ))}
+            </div>
           )}
-        </div>
-        <div className="mt-4 text-gray-700">{profile.bio}</div>
-        <div className="mt-2 flex flex-wrap gap-4 text-gray-500 text-sm">
-          {profile.location && (
-            <span>
-              <i className="fas fa-map-marker-alt mr-1" /> {profile.location}
-            </span>
-          )}
-          {profile.website && (
-            <span>
-              <a
-                href={profile.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                {profile.website}
-              </a>
-            </span>
-          )}
-        </div>
-        <div className="mt-4 flex gap-6 text-gray-700 font-medium">
-          <span>{profile.followersCount || 0} Followers</span>
-          <span>{profile.followingCount || 0} Following</span>
-          <span>{profile.postsCount || 0} Posts</span>
         </div>
       </div>
 
+      {/* Edit Profile Modal */}
       {editMode && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <form
-            onSubmit={handleUpdate}
-            className="bg-white rounded shadow-lg p-6 w-full max-w-md relative"
-          >
-            <button
-              className="absolute top-2 right-2 text-gray-500"
-              type="button"
-              onClick={() => setEditMode(false)}
-            >
-              ✕
-            </button>
-            <h2 className="text-lg font-bold mb-4">Edit Profile</h2>
-            <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">
-                Full Name
-              </label>
-              <input
-                type="text"
-                name="fullName"
-                value={form.fullName}
-                onChange={handleChange}
-                className="w-full border rounded p-2"
-              />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                Edit Profile
+              </h2>
+              <button
+                onClick={() => setEditMode(false)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+              >
+                <svg
+                  className="w-6 h-6 text-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
             </div>
-            <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">Bio</label>
-              <textarea
-                name="bio"
-                value={form.bio}
-                onChange={handleChange}
-                className="w-full border rounded p-2"
-                rows={2}
-              />
-            </div>
-            <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">Website</label>
-              <input
-                type="text"
-                name="website"
-                value={form.website}
-                onChange={handleChange}
-                className="w-full border rounded p-2"
-              />
-            </div>
-            <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">Location</label>
-              <input
-                type="text"
-                name="location"
-                value={form.location}
-                onChange={handleChange}
-                className="w-full border rounded p-2"
-              />
-            </div>
-            <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">
-                Profile Image
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                ref={profileImageInput}
-                onChange={handleProfileImageChange}
-                className="w-full"
-              />
-            </div>
-            <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">
-                Background Image
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                ref={backgroundImageInput}
-                onChange={handleBackgroundImageChange}
-                className="w-full"
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 transition"
-            >
-              Save Changes
-            </button>
-          </form>
+
+            <form onSubmit={handleUpdate} className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    name="fullName"
+                    value={form.fullName}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={form.location}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Where are you located?"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Bio
+                </label>
+                <textarea
+                  name="bio"
+                  value={form.bio}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                  placeholder="Tell us about yourself..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Website
+                </label>
+                <input
+                  type="url"
+                  name="website"
+                  value={form.website}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="https://yourwebsite.com"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Profile Image
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={
+                        profileImageFile
+                          ? URL.createObjectURL(profileImageFile)
+                          : profile.profileImage
+                          ? profile.profileImage.startsWith("http")
+                            ? profile.profileImage
+                            : `http://localhost:8080/uploads/${profile.profileImage}`
+                          : "/placeholder.svg?height=64&width=64"
+                      }
+                      alt="Profile preview"
+                      className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => profileImageInput.current.click()}
+                      className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      Change Photo
+                    </button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={profileImageInput}
+                      onChange={handleProfileImageChange}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Cover Image
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={
+                        backgroundImageFile
+                          ? URL.createObjectURL(backgroundImageFile)
+                          : profile.backgroundImage
+                          ? profile.backgroundImage.startsWith("http")
+                            ? profile.backgroundImage
+                            : `http://localhost:8080/uploads/${profile.backgroundImage}`
+                          : "/placeholder.svg?height=64&width=128"
+                      }
+                      alt="Cover preview"
+                      className="w-24 h-12 rounded-lg object-cover border-2 border-gray-200 dark:border-gray-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => backgroundImageInput.current.click()}
+                      className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      Change Cover
+                    </button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={backgroundImageInput}
+                      onChange={handleBackgroundImageChange}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditMode(false)}
+                  className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
+      {/* Message Modal */}
       {isMessageModalOpen && (
         <MessageModal
           isOpen={isMessageModalOpen}
@@ -724,25 +961,6 @@ const ProfilePage = () => {
           currentUser={currentLoggedInUser}
         />
       )}
-
-      <div className="mt-8 px-6 pb-6">
-        <h2 className="text-xl font-bold mb-4">Posts</h2>{" "}
-        {posts.length === 0 ? (
-          <div className="text-gray-500">No posts yet.</div>
-        ) : (
-          posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              currentUser={currentLoggedInUser}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onLike={handleLike}
-              onShare={handleShare}
-            />
-          ))
-        )}
-      </div>
     </div>
   );
 };

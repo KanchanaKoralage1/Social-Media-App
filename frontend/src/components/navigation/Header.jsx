@@ -1,153 +1,106 @@
-import React, { useState } from "react";
-import {
-  FiHome,
-  FiMessageCircle,
-  FiBell,
-  FiSearch,
-  FiMenu,
-  FiSun,
-  FiMoon,
-  FiLogOut,
-  FiX,
-} from "react-icons/fi";
-
-const menuItems = [
-  { name: "Explore", href: "/explore" },
-  { name: "Top News", href: "#" },
-  { name: "Verified", href: "#" },
-  { name: "Accounts", href: "#" },
-];
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import Sidebar from "../navigation/Sidebar";
 
 const Header = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [dark, setDark] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
-
-  // Helper function to construct the full image URL
-  const getFullImageUrl = (imagePath) => {
-    if (!imagePath) return null
-    return imagePath.startsWith("http") ? imagePath : `http://localhost:8080/uploads/${imagePath}`
-  }
-
-  // Get profile image from localStorage or use a default
-  let profileImg = "/default-profile.png"
-  try {
-    const user = JSON.parse(localStorage.getItem("user"))
-    if (user && user.profileImage) {
-      profileImg = getFullImageUrl(user.profileImage) // Use helper for stored image
-    }
-  } catch (e) {}
-
-  const handleThemeToggle = () => setDark((prev) => !prev);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.location.href = "/login";
-  };
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   return (
     <>
       {/* Mobile Header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b flex items-center justify-between px-4 py-2 shadow">
-        <div className="flex gap-4 items-center">
-          <a href="/home">
-            <FiHome size={22} />
-          </a>
-          <a href="/profile">
-            <img
-              src={profileImg}
-              alt="Profile"
-              className="w-7 h-7 rounded-full object-cover border"
-            />
-          </a>
-          <a href="/messages">
-            <FiMessageCircle size={22} />
-          </a>
-          <a href="/notifications">
-            <FiBell size={22} />
-          </a>
-          <button onClick={() => setShowSearch(true)}>
-            <FiSearch size={22} />
+      <div className="md:hidden fixed top-0 left-0 right-0 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 shadow-sm">
+        <div className="flex items-center justify-between">
+          {/* Left: Menu button */}
+          <button
+            onClick={() => setShowMobileSidebar(true)}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
           </button>
-        </div>
-        <button onClick={() => setMenuOpen(true)} className="p-2">
-          <FiMenu size={26} />
-        </button>
-      </header>
-      {/* Search Modal */}
-      {showSearch && (
-        <div
-          className="fixed inset-0 z-50 bg-opacity-40 flex items-start justify-center pt-24"
-          onClick={() => setShowSearch(false)}
-        >
-          <div
-            className="bg-white w-11/12 max-w-md rounded shadow-lg p-4 flex items-center gap-2"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <input
-              type="text"
-              autoFocus
-              placeholder="Search..."
-              className="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button onClick={() => setShowSearch(false)} className="p-2">
-              <FiX size={22} />
-            </button>
-          </div>
-        </div>
-      )}
-      {/* Hamburger Drawer */}
-      {menuOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-opacity-40 "
-          onClick={() => setMenuOpen(false)}
-        >
-          <div
-            className="absolute right-0 top-14 h-[calc(100vh-56px)] w-72 bg-white shadow-lg flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Theme Toggle in top right */}
-            <div className="flex justify-end p-3">
-              <button
-                onClick={handleThemeToggle}
-                className="p-2 rounded-full bg-gray-100 hover:bg-blue-100 transition"
-                title="Toggle theme"
-              >
-                {dark ? (
-                  <FiSun size={20} color="orange" />
-                ) : (
-                  <FiMoon size={20} />
-                )}
-              </button>
+
+          {/* Center: Logo */}
+          <Link to="/home" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+              <span className="text-white font-bold text-sm">PF</span>
             </div>
-            {/* Menu Items */}
-            <nav className="flex-1 flex flex-col gap-2 px-6">
-              {menuItems.map((item, idx) => (
-                <a
-                  key={idx}
-                  href={item.href}
-                  className="flex items-center gap-3 py-3 text-gray-700 hover:bg-blue-50 rounded transition font-medium"
-                  onClick={() => setMenuOpen(false)}
+            <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              PathFinder
+            </span>
+          </Link>
+
+          {/* Right: Notifications and Messages */}
+          <div className="flex items-center gap-2">
+            <Link to="/notifications">
+            <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <svg
+                   className="w-6 h-6 text-blue-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
-                  {item.icon}
-                  {item.name}
-                </a>
-              ))}
-            </nav>
-            {/* Logout Button */}
-            <div className="p-6 border-t">
-              <button
-                onClick={handleLogout}
-                className="w-full py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 transition flex items-center justify-center gap-2"
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 00-3 0v.68C7.64 5.36 6 7.93 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                  />
+                </svg>
+             
+            </button>
+            </Link>
+
+            <Link to="/messages">
+            <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              <svg
+                 className="w-6 h-6 text-blue-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <FiLogOut size={18} />
-                Logout
-              </button>
-            </div>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+             
+            </button>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {showMobileSidebar && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+          onClick={() => setShowMobileSidebar(false)}
+        >
+          <div
+            className="absolute left-0 top-0 h-full w-64 bg-white dark:bg-gray-900 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Sidebar closeSidebar={() => setShowMobileSidebar(false)} />
           </div>
         </div>
       )}
+
+      {/* Spacer for mobile header */}
+      <div className="md:hidden h-16" />
     </>
   );
 };
