@@ -4,6 +4,8 @@ A full-stack social media application built with Spring Boot backend and React f
 
 ## 🎥 Demo Video
 
+https://mysliit-my.sharepoint.com/:v:/g/personal/it22584472_my_sliit_lk/EY33i-cvTLdPtnJhK78Z45sBQkJjwcKKcLnhRxST4lDTTg?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=OlxrTe
+
 ## ✨ Features
 
 - **User Authentication & Authorization**
